@@ -20,7 +20,7 @@ library(purrr)
 # Define the directories.
 BASE         <- "/pic/projects/GCAM/Dorheim/grand_exp/an2month"   # The project location.
 CMIP5_DATA   <- "/pic/projects/GCAM/CMIP5-CHartin"                # Directory containing the cmip5 files to process.
-OUTPUT_DIR   <- file.path(BASE, "input")                          # Define the output directory.
+OUTPUT_DIR   <- file.path(BASE, "data-raw", "input")              # Define the output directory.
 dir.create(OUTPUT_DIR, showWarnings = FALSE)
 
 
@@ -85,6 +85,7 @@ tibble(path = file_list) %>%
                               "ensemble", "date"), sep = "_", remove = FALSE) %>%
   select(path, variable, domain, model, experiment, ensemble) ->
   CMIP5_to_process
+q()
 
 # 3. Save output -----------------------------------------------------------------------------------------------------
 
