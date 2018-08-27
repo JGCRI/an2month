@@ -91,3 +91,7 @@ q()
 
 # Save the tibble of the CMIP 5 files to use to process in L1.
 write.csv(CMIP5_to_process, file = file.path(OUTPUT_DIR, "CMIP5_to_process.csv"), row.names = F)
+message('Finishing up L0.find_cmip5_files and saving results to...\n ',
+        file.path(OUTPUT_DIR, "CMIP5_to_process.csv"))
+
+
