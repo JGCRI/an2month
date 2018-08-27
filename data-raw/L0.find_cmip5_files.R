@@ -85,7 +85,7 @@ tibble(path = file_list) %>%
                               "ensemble", "date"), sep = "_", remove = FALSE) %>%
   select(path, variable, domain, model, experiment, ensemble) ->
   CMIP5_to_process
-q()
+
 
 # 3. Save output -----------------------------------------------------------------------------------------------------
 
