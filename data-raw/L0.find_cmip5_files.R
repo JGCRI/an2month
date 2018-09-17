@@ -77,7 +77,7 @@ file_list <- list.files(CMIP5_DATA, pattern = cmip_search_pattern, full.names = 
 
 if(length(file_list) < 1) stop('Could not find any cmip files files matching ', cmip_search_pattern)
 
-# Parse out the CMIP% meta data information from the file name, this will be used to
+# Parse out the CMIP5 meta data information from the file name, this will be used to
 # make a table to help illustrate what we have and which ones are missing.
 tibble(path = file_list) %>%
   mutate(filename = basename(path)) %>%
