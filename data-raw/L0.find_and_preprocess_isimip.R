@@ -156,7 +156,13 @@ ncs <- lapply(isimip_file_info$path, FUN = monthly_func, cdo_dir = CDO_DIR, outp
 # about the nc files to pass on to level 1 to calculate the monthly fraction data.
 if(showMessages) message('4. Save nc information')
 
-to_process <- tibble(file = unlist(ncs))
+tibble(file = unlist(ncs)) %>%
+  mutate(filename = basename(file)) %>%
+  separate(filename, into = c("monthly", "variable", "A", "B", "C", "model",
+                              "experiment", "date"), sep = "_", remove = FALSE) %>%
+  select(path = file, variable, model, experiment, date) ->
+  to_process
+
 write.csv(x = to_process, file = file.path(OUTPUT_DIR, 'to_process.csv'), row.names = FALSE)
 
 if(showMessages) message('script complete')
