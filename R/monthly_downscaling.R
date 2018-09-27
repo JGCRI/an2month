@@ -81,7 +81,7 @@ monthly_downscaling <- function(frac_path, flds_path, var){
 
     # Convert from kg/m2*s to mm/month
     monthly_converted <- pr_conversion(monthly)
-    unit_value <- 'mm/month'
+    unit_value <- 'mm month-1'
 
   } else {
 
