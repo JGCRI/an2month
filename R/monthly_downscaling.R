@@ -64,7 +64,6 @@ monthly_downscaling <- function(frac_path, flds_path, var){
   ordered_names <- as.character(sort(as.integer(names(monthly))))
   monthly       <- monthly[ordered_names]
 
-  monthly
 
   # Clean up intermediate inputs
   remove(monthly_12, frac_12, flds_object, frac_object)
@@ -81,7 +80,7 @@ monthly_downscaling <- function(frac_path, flds_path, var){
 
     # Convert from kg/m2*s to mm/month
     monthly_converted <- pr_conversion(monthly)
-    unit_value <- 'mm month-1'
+    unit_value <- 'mm_month-1'
 
   } else {
 
@@ -93,7 +92,7 @@ monthly_downscaling <- function(frac_path, flds_path, var){
   coordinates <- select(coordinates, index = column_index,
                         lat = frac_lat, lon = frac_lon)
 
-  list(data = monthly, coordinates = coordinates, units = unit_value)
+  list(data = monthly_converted, coordinates = coordinates, units = unit_value)
 
 }
 
