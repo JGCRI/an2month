@@ -6,7 +6,7 @@
 
 tas_conversion <- function(input){
 
-  input - 273.15 # K to C
+  signif(input - 273.15, digits = 8) # K to C
 
 
 }
@@ -40,7 +40,7 @@ pr_conversion <- function(input){
   rslt <- list()
   for(i in 1:length(input)){
 
-    rslt[[i]] <-  signif(input[[i]] * seconds[[i]], digits = 5)
+    rslt[[i]] <-  signif(input[[i]] * seconds[[i]], digits = 6)
 
   }
 
