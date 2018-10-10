@@ -15,6 +15,7 @@ tas_conversion <- function(input){
 
 #' @param input
 #' @import lubridate
+#' @import foreach
 #' @keywords internal
 #' @return TBD
 pr_conversion <- function(input){
@@ -24,7 +25,7 @@ pr_conversion <- function(input){
   # number of seconds in each month of data. This will account for
   # leap years.
 
-  time <- paste0(names(input), '01')
+  time <- paste0(row.names(input), '01')
   extra_step <- gsub("-", "", ymd(time[length(time)]) %m+% months(1))
   time_steps <- c(time, extra_step)
 
@@ -35,18 +36,8 @@ pr_conversion <- function(input){
   # Parse out the number of seconds from the span
   seconds <- as.vector(as.numeric(as.duration(span), "seconds"))
 
-  # Multiply the kg/m2*s by the number of seconds in each month
-  # to convert to mm/month.
-  rslt <- list()
-  for(i in 1:length(input)){
-
-    rslt[[i]] <-  signif(input[[i]] * seconds[[i]], digits = 6)
-
-  }
-
-
-  # Add the names to the output
-  names(rslt) <- names(input)
+  # Multiply the kg/m2*s by the number of seconds in each month to convert to mm/month.
+  rslt <- foreach(i = 1:length(seconds), .combine = 'rbind') %do% (signif(input[i, ] * seconds[i], digits = 6))
 
   rslt
 }
