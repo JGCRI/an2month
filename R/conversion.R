@@ -6,7 +6,7 @@
 
 tas_conversion <- function(input){
 
-  signif(input - 273.15, digits = 8) # K to C
+  signif(input - 273.15, digits = 6) # K to C
 
 
 }
@@ -36,6 +36,7 @@ pr_conversion <- function(input){
   # Parse out the number of seconds from the span
   seconds <- as.vector(as.numeric(as.duration(span), "seconds"))
 
+  # TODO, convert the seconds into a matrix and then mulitply!
   # Multiply the kg/m2*s by the number of seconds in each month to convert to mm/month.
   rslt <- foreach(i = 1:length(seconds), .combine = 'rbind') %do% (signif(input[i, ] * seconds[i], digits = 6))
 

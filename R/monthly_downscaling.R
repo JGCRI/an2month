@@ -13,7 +13,7 @@ check_names <- function(list, req_names, listName = NULL){
 #' @importFrom dplyr %>%
 #' @return TBD
 #' @export
-harmonize_coordinates <- function(frac_coordinates, fld_coordinates){
+harmonize_coordinates <- function(frac, frac_coordinates, fld_coordinates, var){
 
   stopifnot(is.data.frame(frac_coordinates))
   stopifnot(is.data.frame(fld_coordinates))
@@ -33,7 +33,7 @@ harmonize_coordinates <- function(frac_coordinates, fld_coordinates){
 
     fld_coordinates %>%
       dplyr::rename(flds_column_index = column_index) %>%
-      dplyr::left_join(frac$coordinates %>%
+      dplyr::left_join(frac_coordinates %>%
                   dplyr::rename(frac_index = column_index),
                 by = c('lat', 'lon')) ->
       lat_lon_mapping
@@ -42,12 +42,7 @@ harmonize_coordinates <- function(frac_coordinates, fld_coordinates){
     # Modify the fraction object so that it contains the correct grid cells.
     frac <-  frac[[var]][ , lat_lon_mapping$frac_index]
 
-
-    lat_lon_mapping %>%
-      dplyr::select(index = flds_column_index, lat, lon) ->
-      coordinates
-
-  } else {
+    } else {
 
     frac <- frac[[var]]
 
@@ -81,7 +76,7 @@ monthly_downscaling <- function(frac, fld, fld_coordinates, fld_time, var){
 
   # If the fraction and field grid cells are different, becasue of droped NAs, then update the fraction
   # file so that it contains the correct grid cells.
-  frac <- harmonize_coordinates(frac$coordinates, fld_coordinates)
+  frac <- harmonize_coordinates(frac, frac$coordinates, fld_coordinates, var)
 
   # Now that we know that the grid cells in the data frames represent the same thing we can start the temporal downscaling.
   # Replicate the data frame 12 times, so that there is a copy of the grid cells for each month, add the yera names. s
@@ -93,7 +88,8 @@ monthly_downscaling <- function(frac, fld, fld_coordinates, fld_time, var){
   yr_fld   <- nrow(fld)             # number of years
   month_ch <- sprintf('%02d', 1:12) # string version of month number
 
-  # Monthly downscaling
+  # Monthly downscaling function and use.
+  # TODO move the downscale_fun to a seperate function
   downscale_fun <- function(mon_num, frac, fld_12, yr_fld, fld_time){
 
     month_frac <- matrix(rep(frac[mon_num, ], yr_fld), nrow = yr_fld, byrow = TRUE)
@@ -135,7 +131,6 @@ monthly_downscaling <- function(frac, fld, fld_coordinates, fld_time, var){
 
   }
 
-
-  list(data = monthly_converted, coordinates = coordinates, units = unit_value)
+  list(data = monthly_converted, coordinates = fld_coordinates, units = unit_value)
 
 }
