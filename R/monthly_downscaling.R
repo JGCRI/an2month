@@ -69,8 +69,8 @@ harmonize_coordinates <- function(frac, frac_coordinates, fld_coordinates, var){
 #' @param fld_coordinates the grid cell coordinates for the field matrix
 #' @param fld_time a vector of the field time values
 #' @param var the string of the variable to process
-#' @import dplyr
-#' @import foreach
+#' @import dplyr %>%
+#' @import foreach %do%
 #' @return a list containing a 2d data array, a data frame of grid cell coordinates, and a unit string
 #' @export
 
