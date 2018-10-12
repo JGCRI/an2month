@@ -3,7 +3,7 @@
 #'
 #' @param list an object, such as list or data frame that needs certain names
 #' @param req_name a vector of the expected/required names in the list
-#' @param listName an optional string that will be incorperated into the error message, default is NULL
+#' @param listName an optional string that will be incorporated into the error message, default is NULL
 #' @return an error message if the list is missing a required name
 check_names <- function(list, req_names, listName = NULL){
 
@@ -16,8 +16,8 @@ check_names <- function(list, req_names, listName = NULL){
 
 #' Harmonize the fraction and field grid cells by coordinates
 #'
-#' @param frac the downscaling fraction list, should be avaiable as package data
-#' @param frac_coordinates the data frame of the fraction grid cell coordinates should be avaiable from frac
+#' @param frac the downscaling fraction list, should be available as package data
+#' @param frac_coordinates the data frame of the fraction grid cell coordinates should be available from frac
 #' @param fld_coordinates the data frame of the field grid cell coordinates
 #' @param var the variable, tas or pr, to process
 #' @importFrom dplyr %>% rename left_join
@@ -37,7 +37,7 @@ harmonize_coordinates <- function(frac, frac_coordinates, fld_coordinates, var){
   if(any(!fld_coordinates$lat %in% frac_coordinates$lat)) stop('fraction file is missing lat values')
   if(any(!fld_coordinates$lon %in% frac_coordinates$lon)) stop('fraction file is missing lon values')
 
-  # If the fraction file has larger dimensions then it could be casued by the NAs, use the
+  # If the fraction file has larger dimensions then it could be caused by the NAs, use the
   # fld coordinate information to subset the fraction file.
   if(any(dim(frac_coordinates) > dim(fld_coordinates))){
 
@@ -87,7 +87,7 @@ monthly_downscaling <- function(frac, fld, fld_coordinates, fld_time, var){
 
   # Start temporal downscaling, first replicate the data frame 12 times,
   # so that there is a copy of the the annual grid cells for each month. Latter
-  # on we will mulitply each of copy by the monthly fractions.
+  # on we will multiply each of copy by the monthly fractions.
   fld            <- fld[[var]]
   row.names(fld) <- fld_time
   fld_12         <- replicate(n = 12, fld, simplify = FALSE)
@@ -106,7 +106,7 @@ monthly_downscaling <- function(frac, fld, fld_coordinates, fld_time, var){
 
     }
 
-  # Orgnaize monthly down scaled results by yearmonth
+  # Organize monthly down scaled results by yearmonth
   order        <- order(as.integer(row.names(monthly_data_unordered)))
   monthly_data <- monthly_data_unordered[row.names(monthly_data_unordered)[order], ]
 
