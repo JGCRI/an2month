@@ -1,20 +1,30 @@
 
-# NEEDS DOCUMENTATION!
+#' Check an object for required names
+#'
+#' @param list an object, such as list or data frame that needs certain names
+#' @param req_name a vector of the expected/required names in the list
+#' @param listName an optional string that will be incorperated into the error message, default is NULL
+#' @return an error message if the list is missing a required name
 check_names <- function(list, req_names, listName = NULL){
 
   missing <- !req_names %in% names(list)
 
-  if(any(missing)) stop(listName, ' missing columns ', req_names[missing])
+  if(any(missing)) stop(listName, ' missing ', req_names[missing])
 
 }
 
 
-# add a function that will check the coordinates of the fraction and the flds input!
-#' @importFrom dplyr %>%
-#' @return TBD
-#' @export
+#' Harmonize the fraction and field grid cells by coordinates
+#'
+#' @param frac the downscaling fraction list, should be avaiable as package data
+#' @param frac_coordinates the data frame of the fraction grid cell coordinates should be avaiable from frac
+#' @param fld_coordinates the data frame of the field grid cell coordinates
+#' @param var the variable, tas or pr, to process
+#' @importFrom dplyr %>% rename left_join
+#' @return the fraction matrix to use in monthly downscaling arranged so that the fraction grid cells match the order of the field grid cells
 harmonize_coordinates <- function(frac, frac_coordinates, fld_coordinates, var){
 
+  # Check inputs
   stopifnot(is.data.frame(frac_coordinates))
   stopifnot(is.data.frame(fld_coordinates))
 
@@ -52,20 +62,16 @@ harmonize_coordinates <- function(frac, frac_coordinates, fld_coordinates, var){
 }
 
 
-
-
-# NEED TO BE CAREFUl about the intermeidate inputs using up too much memory!
-# NEED TO DOCUMENT! this needs to be better documented and cleaned up quite a bi!
-# see all of the TODOs also there are some sections of code that I did not add
-
-#' @param frac TBD
-#' @param fld TBD
-#' @param fld_coordinates TDB
-#' @param fld_time TBD
-#' @param var
+#' Downscale annual gridded data to monthly gridded data and convert units
+#'
+#' @param frac the matrix of the monthly fractions to use in downscaling, created by \code{harmonize_coordinates}
+#' @param fld the full grid data to downscale
+#' @param fld_coordinates the grid cell coordinates for the field matrix
+#' @param fld_time a vector of the field time values
+#' @param var the string of the variable to process
 #' @import dplyr
 #' @import foreach
-#' @return TBD
+#' @return a list containing a 2d data array, a data frame of grid cell coordinates, and a unit string
 #' @export
 
 monthly_downscaling <- function(frac, fld, fld_coordinates, fld_time, var){
@@ -74,45 +80,40 @@ monthly_downscaling <- function(frac, fld, fld_coordinates, fld_time, var){
   check_names(frac, c(var, 'coordinates', 'time'), 'frac input')
   check_names(fld, var, 'fld input')
 
-  # If the fraction and field grid cells are different, becasue of droped NAs, then update the fraction
-  # file so that it contains the correct grid cells.
+  #Harmonize the fraction and field grid cells by lat and lon coordinates. This is an important step because
+  # NA grid cells may have been discarded when generating the fields.
   frac <- harmonize_coordinates(frac, frac$coordinates, fld_coordinates, var)
+  if(nrow(frac) != 12) stop('there must be 12 rows, months of data, in the frac input')
 
-  # Now that we know that the grid cells in the data frames represent the same thing we can start the temporal downscaling.
-  # Replicate the data frame 12 times, so that there is a copy of the grid cells for each month, add the yera names. s
+  # Start temporal downscaling, first replicate the data frame 12 times,
+  # so that there is a copy of the the annual grid cells for each month. Latter
+  # on we will mulitply each of copy by the monthly fractions.
   fld            <- fld[[var]]
   row.names(fld) <- fld_time
   fld_12         <- replicate(n = 12, fld, simplify = FALSE)
 
-  # Time information
+  # Copy time information
   yr_fld   <- nrow(fld)             # number of years
   month_ch <- sprintf('%02d', 1:12) # string version of month number
 
-  # Monthly downscaling function and use.
-  # TODO move the downscale_fun to a seperate function
-  downscale_fun <- function(mon_num, frac, fld_12, yr_fld, fld_time){
+  # Multiply each copy of the annual data by a single monthly fraction
+  monthly_data_unordered <- foreach(mon_num = 1:nrow(frac), .combine = 'rbind') %do% {
 
-    month_frac <- matrix(rep(frac[mon_num, ], yr_fld), nrow = yr_fld, byrow = TRUE)
-
-    monthly <- fld_12[[mon_num]] * month_frac;
-
-    row.names(monthly) <- paste0(fld_time, month_ch[mon_num])
-
+    month_frac <- matrix(rep(frac[mon_num, ], yr_fld), nrow = yr_fld, byrow = TRUE)     # Copy the monthly fraction so that is matches the annual grid dimensions
+    monthly    <- fld_12[[mon_num]] * month_frac                                        # Multiply annual by monthly
+    row.names(monthly) <- paste0(fld_time, month_ch[mon_num])                           # Name rows and return
     monthly
-  }
-  monthly_data_unordered <- foreach(mon_num =1:nrow(frac), .combine = 'rbind') %do% downscale_fun(mon_num = mon_num, frac = frac, fld_12 = fld_12,
-                                                                    fld_time = fld_time, yr_fld = yr_fld)
+
+    }
 
   # Orgnaize monthly down scaled results by yearmonth
   order        <- order(as.integer(row.names(monthly_data_unordered)))
   monthly_data <- monthly_data_unordered[row.names(monthly_data_unordered)[order], ]
 
-
   # Clean up intermediate inputs to avoid R memory problems
   remove(fld, fld_12, monthly_data_unordered)
 
-
-  # convert montly data to the correct unnits!
+  # Convert units
   if(var == 'tas'){
 
     # Convert from K to C using the conversion function
@@ -124,10 +125,6 @@ monthly_downscaling <- function(frac, fld, fld_coordinates, fld_time, var){
     # Convert from kg/m2*s to mm/month
     monthly_converted <- pr_conversion(monthly_data)
     unit_value <- 'mm_month-1'
-
-  } else {
-
-    stop('unkown variable, need to add appropriate function')
 
   }
 
