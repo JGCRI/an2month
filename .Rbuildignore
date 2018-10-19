@@ -1,2 +1,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^notes$
+^data-raw$
+^scratch$
+^investigations$
