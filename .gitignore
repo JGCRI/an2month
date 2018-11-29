@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+investigations/
+scratch/
+data-raw/
