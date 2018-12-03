@@ -2,10 +2,10 @@
 #' Check an object for required names
 #'
 #' @param list an object, such as list or data frame that needs certain names
-#' @param req_name a vector of the expected/required names in the list
-#' @param listName an optional string that will be incorporated into the error message, default is NULL
+#' @param req_name a vector of the required names in the list
+#' @param list_name an optional string that will be incorporated into the error message, default is NULL
 #' @return an error message if the list is missing a required name
-check_names <- function(list, req_names, listName = NULL){
+check_names <- function(list, req_names, list_name = NULL){
 
   missing <- !req_names %in% names(list)
 
@@ -14,15 +14,15 @@ check_names <- function(list, req_names, listName = NULL){
 }
 
 
-#' Harmonize the fraction and field grid cells by coordinates
+#' Re-index the grid so that coordinates match latitude and longitude, this is important when working with ISIMIP and CMIP data
 #'
-#' @param frac the downscaling fraction list, should be available as package data
+#' @param frac the downscaling fraction list, internal pacakge data
 #' @param frac_coordinates the data frame of the fraction grid cell coordinates should be available from frac
 #' @param fld_coordinates the data frame of the field grid cell coordinates
-#' @param var the variable, tas or pr, to process
+#' @param var the variable to process, a string of tas or pr
 #' @importFrom dplyr %>% rename left_join
 #' @return the fraction matrix to use in monthly downscaling arranged so that the fraction grid cells match the order of the field grid cells
-harmonize_coordinates <- function(frac, frac_coordinates, fld_coordinates, var){
+reindex_grid <- function(frac, frac_coordinates, fld_coordinates, var){
 
   # Check inputs
   stopifnot(is.data.frame(frac_coordinates))
@@ -62,9 +62,9 @@ harmonize_coordinates <- function(frac, frac_coordinates, fld_coordinates, var){
 }
 
 
-#' Downscale annual gridded data to monthly gridded data and convert units
+#' Downscale annual gridded data to monthly gridded data
 #'
-#' @param frac the matrix of the monthly fractions to use in downscaling, created by \code{harmonize_coordinates}
+#' @param frac the matrix of the monthly fractions to use in downscaling, package data for more details on how calculated see data-raw
 #' @param fld the full grid data to downscale
 #' @param fld_coordinates the grid cell coordinates for the field matrix
 #' @param fld_time a vector of the field time values
@@ -80,9 +80,10 @@ monthly_downscaling <- function(frac, fld, fld_coordinates, fld_time, var){
   check_names(frac, c(var, 'coordinates', 'time'), 'frac input')
   check_names(fld, var, 'fld input')
 
-  #Harmonize the fraction and field grid cells by lat and lon coordinates. This is an important step because
-  # NA grid cells may have been discarded when generating the fields.
-  frac <- harmonize_coordinates(frac, frac$coordinates, fld_coordinates, var)
+  # Re-index the grid cells so that the monthly fractions used in the downscaling and the data being downscaled
+  # have the same latitude and longitude coordinate system. This is important when working with ISIMIP and CMIP files.
+  # Since the ISMIP data only
+  frac <- reindex_grid(frac, frac$coordinates, fld_coordinates, var)
   if(nrow(frac) != 12) stop('there must be 12 rows, months of data, in the frac input')
 
   # Start temporal downscaling, first replicate the data frame 12 times,
