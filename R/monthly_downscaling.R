@@ -9,7 +9,7 @@ check_names <- function(list, req_names, list_name = NULL){
 
   missing <- !req_names %in% names(list)
 
-  if(any(missing)) stop(listName, ' missing ', req_names[missing])
+  if(any(missing)) stop(list_name, ' missing ', req_names[missing])
 
 }
 
@@ -74,7 +74,7 @@ reindex_grid <- function(frac, frac_coordinates, fld_coordinates, var){
 #' \code{monthly_downscaling} Use average monthly fractions of annual tas or pr ISMIP/CMIP5 data to downscale annual data to montly values.
 #'
 #' @param frac the matrix of the monthly fractions to use in downscaling, package data for more details on how calculated see data-raw
-#' @param fld the 2d array of ntime x ngrid of the data to be downscaled, this object should be a flattened 3-D array, where latitude
+#' @param fld_data the 2d array of ntime x ngrid of the data to be downscaled, this object should be a flattened 3-D array, where latitude
 #' the most rapidly varying index for the individual time slices.
 #' @param fld_coordinates a data frame of the grid cells coordinates for the field matrix.
 #' @param fld_time a vector of the field time values.
@@ -82,27 +82,26 @@ reindex_grid <- function(frac, frac_coordinates, fld_coordinates, var){
 #' @importFrom  foreach %do%
 #' @return a list containing the monthly downsaceld 2d array and a
 #' @export
-monthly_downscaling <- function(frac, fld, fld_coordinates, fld_time, var){
+monthly_downscaling <- function(frac, fld_data, fld_coordinates, fld_time, var){
 
   # Check the inputs
-  check_names(frac, c(var, 'coordinates', 'time'), 'frac input')
-  check_names(fld, var, 'fld input')
+  if(!is.array(fld_data)){stop('fld_data must be an array')}
+  check_names(list = frac, req_names = c(var, 'coordinates', 'time'), list_name = 'frac input')
 
   # Re-index the grid cells so that the monthly fractions used in the downscaling and the data being downscaled
   # have the same latitude and longitude coordinate system. This is important when working with ISIMIP and CMIP files.
   # Since the ISMIP data only
   frac <- reindex_grid(frac, frac$coordinates, fld_coordinates, var)
-  if(nrow(frac) != 12) stop('there must be 12 rows, months of data, in the frac input')
+  if(nrow(frac) != 12) stop('there must be 12 rows one for each month, in the frac input')
 
   # Start temporal downscaling
   # First replicate the data frame 12 times, so that there is a copy of the the annual grid cells for each month.
   # Latter on we will multiply each of copy by the monthly fractions.
-  fld            <- fld[[var]]
-  row.names(fld) <- fld_time
-  fld_12         <- replicate(n = 12, fld, simplify = FALSE)
+  row.names(fld_data) <- fld_time
+  fld_12         <- replicate(n = 12, fld_data, simplify = FALSE)
 
   # Copy time information
-  yr_fld   <- nrow(fld)             # number of years
+  yr_fld   <- nrow(fld_data)        # number of years
   month_ch <- sprintf('%02d', 1:12) # string version of month number
 
   # Multiply each copy of the annual data by a single monthly fraction
