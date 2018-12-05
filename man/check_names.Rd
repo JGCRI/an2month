@@ -4,14 +4,14 @@
 \alias{check_names}
 \title{Check an object for required names}
 \usage{
-check_names(list, req_names, listName = NULL)
+check_names(list, req_names, list_name = NULL)
 }
 \arguments{
 \item{list}{an object, such as list or data frame that needs certain names}
 
-\item{listName}{an optional string that will be incorporated into the error message, default is NULL}
+\item{list_name}{an optional string that will be incorporated into the error message, default is NULL}
 
-\item{req_name}{a vector of the expected/required names in the list}
+\item{req_name}{a vector of the required names in the list}
 }
 \value{
 an error message if the list is missing a required name

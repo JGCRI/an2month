@@ -7,10 +7,10 @@
 tas_conversion(input)
 }
 \arguments{
-\item{input}{the matrix of the monthly downscaled tas data}
+\item{input}{a 2d array of temperature data in degree K to convert to C}
 }
 \value{
-a matrix of tas in degrees C
+a matrix of the monthly downscaled temperature in degrees C
 }
 \description{
 Convert tas from K to C

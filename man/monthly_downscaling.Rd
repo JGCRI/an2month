@@ -2,24 +2,25 @@
 % Please edit documentation in R/monthly_downscaling.R
 \name{monthly_downscaling}
 \alias{monthly_downscaling}
-\title{Downscale annual gridded data to monthly gridded data and convert units}
+\title{Downscale annual data to monthly data.}
 \usage{
-monthly_downscaling(frac, fld, fld_coordinates, fld_time, var)
+monthly_downscaling(frac, fld_data, fld_coordinates, fld_time, var)
 }
 \arguments{
-\item{frac}{the matrix of the monthly fractions to use in downscaling, created by \code{harmonize_coordinates}}
+\item{frac}{the matrix of the monthly fractions to use in downscaling, package data for more details on how calculated see data-raw}
 
-\item{fld}{the full grid data to downscale}
+\item{fld_data}{the 2d array of ntime x ngrid of the data to be downscaled, this object should be a flattened 3-D array, where latitude
+the most rapidly varying index for the individual time slices.}
 
-\item{fld_coordinates}{the grid cell coordinates for the field matrix}
+\item{fld_coordinates}{a data frame of the grid cells coordinates for the field matrix.}
 
-\item{fld_time}{a vector of the field time values}
+\item{fld_time}{a vector of the field time values.}
 
-\item{var}{the string of the variable to process}
+\item{var}{the string of the variable to process.}
 }
 \value{
-a list containing a 2d data array, a data frame of grid cell coordinates, and a unit string
+a list containing the monthly downsaceld 2d array and a
 }
 \description{
-Downscale annual gridded data to monthly gridded data and convert units
+\code{monthly_downscaling} Use average monthly fractions of annual tas or pr ISMIP/CMIP5 data to downscale annual data to montly values.
 }

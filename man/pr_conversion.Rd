@@ -2,17 +2,16 @@
 % Please edit documentation in R/conversion.R
 \name{pr_conversion}
 \alias{pr_conversion}
-\title{Convert from kg/m2*s to mm/month}
+\title{Convert from monthly downscaled preciptation from kg/m2*s to mm/month}
 \usage{
 pr_conversion(input)
 }
 \arguments{
-\item{input}{a matrix of the monthly downscaled pr data}
+\item{input}{a 2d array of monhtly downscaled preciptation data in kg/m2*s to convert to mm/month, row.names of input must correspond to a time formatted as YYYYMM}
 }
 \value{
-a matrix of pr data in mm/month
+a matrix of monthly precipitation data in mm/month
 }
 \description{
-Convert from kg/m2*s to mm/month
+Convert from monthly downscaled preciptation from kg/m2*s to mm/month
 }
-\keyword{internal}
