@@ -19,3 +19,4 @@ an error message if the list is missing a required name
 \description{
 Check an object for required names
 }
+\keyword{internal}

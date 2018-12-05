@@ -15,11 +15,14 @@ tas_conversion <- function(input){
 #' Convert from monthly downscaled preciptation from kg/m2*s to mm/month
 #'
 #' @param input a 2d array of monhtly downscaled preciptation data in kg/m2*s to convert to mm/month, row.names of input must correspond to a time formatted as YYYYMM
-#' @importFrom lubridate ymd interval %m+%
+#' @importFrom lubridate %m+%
 #' @return a matrix of monthly precipitation data in mm/month
 #' @export
 
 pr_conversion <- function(input){
+
+  # Silence pacakge checks
+  '%m+%' <- NULL
 
   if(is.null(time)|any(is.na(time))){stop('input 2d array needs row.names')}
 

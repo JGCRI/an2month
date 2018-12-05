@@ -5,6 +5,7 @@
 #' @param req_name a vector of the required names in the list
 #' @param list_name an optional string that will be incorporated into the error message, default is NULL
 #' @return an error message if the list is missing a required name
+#' @keywords internal
 check_names <- function(list, req_names, list_name = NULL){
 
   missing <- !req_names %in% names(list)
@@ -30,6 +31,9 @@ check_names <- function(list, req_names, list_name = NULL){
 #' @return the fraction matrix to use in monthly downscaling arranged so that the fraction grid cells match the order of the field grid cells
 #' @keywords internal
 reindex_grid <- function(frac, frac_coordinates, fld_coordinates, var){
+
+  # Silence package checks
+  '%>%' <- 'column_index' <- NULL
 
   # Check inputs
   stopifnot(is.data.frame(frac_coordinates))
@@ -83,6 +87,9 @@ reindex_grid <- function(frac, frac_coordinates, fld_coordinates, var){
 #' @return a list containing the monthly downsaceld 2d array and a
 #' @export
 monthly_downscaling <- function(frac, fld_data, fld_coordinates, fld_time, var){
+
+  # Silence package checks
+  '%do%' <- 'mon_num' <- NULL
 
   # Check the inputs
   if(!is.array(fld_data)){stop('fld_data must be an array')}
