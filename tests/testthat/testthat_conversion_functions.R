@@ -21,7 +21,7 @@ test_that('tas_conversion', {
 
 test_that('pr_conversion', {
 
-  # Create a matrix of values with the yearmonth as row names.
+  # Create a matrix of values with the YYYYMM as row names.
   pr <- matrix(10, nrow = 5, ncol = 5)
   row.names(pr) <- c(200001:200005)
 
@@ -38,7 +38,7 @@ test_that('pr_conversion', {
 
   # Now check the entries in the first column, it should equal 10 * the number of seconds in the
   # the time step.
-
+  #
   # Calculate the expect number of seconds in each month.
   time         <- paste0(row.names(pr), '01')
   extra_step   <- gsub("-", "", lubridate::ymd(time[length(time)]) %m+% months(1))
@@ -49,5 +49,11 @@ test_that('pr_conversion', {
 
   expect_equal(as.vector(out[,1]), expected_col)
 
+
+  # Expect Errors
+  # If the time of the input is not the YYYYMM format
+  pr2 <- pr
+  row.names(pr2) <- paste0(row.names(pr), '01')
+  expect_error(pr_conversion(pr2), 'row.names of input must be YYYYMM format')
 
 })
