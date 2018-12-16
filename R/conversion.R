@@ -21,18 +21,19 @@ tas_conversion <- function(input){
 
 pr_conversion <- function(input){
 
-  # Silence pacakge checks
-  '%m+%' <- NULL
-
-  if(is.null(time)|any(is.na(time))){stop('input 2d array needs row.names')}
 
   # Parse out time information from the input and check the time information.
   time <- paste0(row.names(input), '01')
-  test <- suppressWarnings(lubridate::ymd(time))
-  if(nchar(time[[1]]) != 8){ stop('row.names of input must be YYYYMM format') }
+  if(is.null(time) || any(is.na(time))){stop('input 2d array needs row.names')}
+  time <- suppressWarnings(lubridate::ymd(time))
+  if(any(is.na(time))) {
+      stop('row.names of input must be YYYYMM format')
+  }
+
 
   # Add an extra month on to the time vector to use in the time span calculation.
-  extra_step <- gsub("-", "", lubridate::ymd(time[length(time)]) %m+% base::months(1))
+  extra_step <- time[length(time)] %m+% base::months(1)
+  ##extra_step <- gsub("-", "", lubridate::ymd(time[length(time)]) %m+% base::months(1))
   time_steps <- c(time, extra_step)
 
   # Calculate the time span within each month.

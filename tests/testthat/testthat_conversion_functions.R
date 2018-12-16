@@ -40,12 +40,10 @@ test_that('pr_conversion', {
   # the time step.
   #
   # Calculate the expect number of seconds in each month.
-  time         <- paste0(row.names(pr), '01')
-  extra_step   <- gsub("-", "", lubridate::ymd(time[length(time)]) %m+% months(1))
-  time_steps   <- c(time, extra_step)
-  span         <- lubridate::interval(time_steps[1:(length(time_steps)-1)], time_steps[2:length(time_steps)])
-  seconds      <- as.vector(as.numeric(lubridate::as.duration(span), "seconds"))
-  expected_col <- seconds * 10
+
+  dpm <- c(31, 29, 31, 30, 31)          # days per month.
+  spm <- dpm * 86400                    # 86400 seconds per day
+  expected_col <- 10*spm                # original input was 10
 
   expect_equal(as.vector(out[,1]), expected_col)
 
