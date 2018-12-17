@@ -138,7 +138,7 @@ monthly_downscaling <- function(frac, fld_data, fld_coordinates, fld_time, var){
 #'
 #' The conversions performed are
 #' \describe{
-#' \item{frac}{No conversion.}
+#' \item{frac}{Dataset is looked up by name.}
 #' \item{fld_data}{The downscaling function wants a single matrix.  This
 #' function accepts a list of matrices and calls the downscaling function on
 #' each one sequentially.}
@@ -148,7 +148,7 @@ monthly_downscaling <- function(frac, fld_data, fld_coordinates, fld_time, var){
 #' \item{var}{No conversion.}
 #' }
 #'
-#' @param frac Matrix of monthly fractions
+#' @param frac Name of monthly fraction dataset to use.
 #' @param fld_data List of matrices of annual field data to downscale to monthly.
 #' @param coords Coordinate matrix for the field data, such as the one
 #' produced by \code{\link[fldgen]{coord_array}}.
@@ -162,6 +162,8 @@ monthly_downscaling <- function(frac, fld_data, fld_coordinates, fld_time, var){
 #' @keywords internal
 downscaling_component_api <- function(frac, fld_data, coords, time, var)
 {
+    frac <- get(frac)   # would be better to use getFromNamespace, but it doesn't seem to work.
+
     if(is.null(colnames(coords)))
         colnames(coords) <- c('lat','lon') # Won't be necessary if you use the
                                         # output of coord_array

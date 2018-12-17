@@ -7,7 +7,7 @@
 downscaling_component_api(frac, fld_data, coords, time, var)
 }
 \arguments{
-\item{frac}{Matrix of monthly fractions}
+\item{frac}{Name of monthly fraction dataset to use.}
 
 \item{fld_data}{List of matrices of annual field data to downscale to monthly.}
 
@@ -31,7 +31,7 @@ by \code{\link{monthly_downscaling}} and pass the converted arguments.
 \details{
 The conversions performed are
 \describe{
-\item{frac}{No conversion.}
+\item{frac}{Dataset is looked up by name.}
 \item{fld_data}{The downscaling function wants a single matrix.  This
 function accepts a list of matrices and calls the downscaling function on
 each one sequentially.}
