@@ -61,7 +61,7 @@ reindex_grid <- function(frac, frac_coordinates, fld_coordinates, var){
 
 
     # Modify the fraction object so that it contains the correct grid cells.
-    frac <-  frac[[var]][ , lat_lon_mapping$frac_index]
+    frac <- frac[[var]][ , lat_lon_mapping$frac_index]
 
     } else {
 
@@ -89,7 +89,7 @@ reindex_grid <- function(frac, frac_coordinates, fld_coordinates, var){
 monthly_downscaling <- function(frac, fld_data, fld_coordinates, fld_time, var){
 
   # Silence package checks
-  '%do%' <- 'mon_num' <- NULL
+  'mon_num' <- NULL
 
   # Check the inputs
   if(!is.array(fld_data)){stop('fld_data must be an array')}
@@ -127,5 +127,55 @@ monthly_downscaling <- function(frac, fld_data, fld_coordinates, fld_time, var){
 
   # Return the monthly data and the coordinates as a list
   list(data = monthly_data, coordinates = fld_coordinates)
+
+}
+
+
+#' Wrapper function for running downscaling from cassandra component
+#'
+#' Convert inputs received from the cassandra component to the format expected
+#' by \code{\link{monthly_downscaling}} and pass the converted arguments.
+#'
+#' The conversions performed are
+#' \describe{
+#' \item{frac}{Dataset is looked up by name.}
+#' \item{fld_data}{The downscaling function wants a single matrix.  This
+#' function accepts a list of matrices and calls the downscaling function on
+#' each one sequentially.}
+#' \item{coords}{The matrix of coordinate data is converted to a data
+#' frame, and the index column is added.}
+#' \item{time}{No conversion.}
+#' \item{var}{No conversion.}
+#' }
+#'
+#' @param frac Name of monthly fraction dataset to use.
+#' @param fld_data List of matrices of annual field data to downscale to monthly.
+#' @param coords Coordinate matrix for the field data, such as the one
+#' produced by \code{\link[fldgen]{coord_array}}.
+#' @param time Vector of years for the input field matrices.
+#' @param var String indicating the variable being downscaled.  Either 'tas' or
+#' 'pr'.
+#' @return List of matrices of downscaled data.  Grid cells are in rows, months
+#' in columns (This is the opposite of the convention used everywhere else in
+#' this package.)
+#' @export
+#' @keywords internal
+downscaling_component_api <- function(frac, fld_data, coords, time, var)
+{
+    frac <- get(frac)   # would be better to use getFromNamespace, but it doesn't seem to work.
+
+    if(is.null(colnames(coords)))
+        colnames(coords) <- c('lat','lon') # Won't be necessary if you use the
+                                        # output of coord_array
+    fld_coordinates <- as.data.frame(coords)
+    fld_coordinates$column_index <- seq(nrow(fld_coordinates))
+
+    ## return the list of downscaled fields, transposed into the arrangement
+    ## needed by downstream users
+    lapply(fld_data,
+           function(f) {
+               md <- monthly_downscaling(frac, f, fld_coordinates, time, var)
+               t(md$data)
+           })
 
 }
