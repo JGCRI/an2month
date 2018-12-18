@@ -20,9 +20,8 @@ produced by \code{\link[fldgen]{coord_array}}.}
 'pr'.}
 }
 \value{
-List of matrices of downscaled data.  Grid cells are in rows, months
-in columns (This is the opposite of the convention used everywhere else in
-this package.)
+List of matrices of downscaled data.  Grid cells are in columns, months
+in rows.
 }
 \description{
 Convert inputs received from the cassandra component to the format expected
