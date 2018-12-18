@@ -155,9 +155,8 @@ monthly_downscaling <- function(frac, fld_data, fld_coordinates, fld_time, var){
 #' @param time Vector of years for the input field matrices.
 #' @param var String indicating the variable being downscaled.  Either 'tas' or
 #' 'pr'.
-#' @return List of matrices of downscaled data.  Grid cells are in rows, months
-#' in columns (This is the opposite of the convention used everywhere else in
-#' this package.)
+#' @return List of matrices of downscaled data.  Grid cells are in columns, months
+#' in rows.
 #' @export
 #' @keywords internal
 downscaling_component_api <- function(frac, fld_data, coords, time, var)
@@ -170,12 +169,11 @@ downscaling_component_api <- function(frac, fld_data, coords, time, var)
     fld_coordinates <- as.data.frame(coords)
     fld_coordinates$column_index <- seq(nrow(fld_coordinates))
 
-    ## return the list of downscaled fields, transposed into the arrangement
-    ## needed by downstream users
+    ## return the list of downscaled fields
     lapply(fld_data,
            function(f) {
                md <- monthly_downscaling(frac, f, fld_coordinates, time, var)
-               t(md$data)
+               md$data
            })
 
 }

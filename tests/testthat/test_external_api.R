@@ -32,10 +32,18 @@ test_that('External API produces valid fields', {
         expect_equal(length(monthly_fields), nfield)
         for(i in seq(length(monthly_fields))) {
             mfield <- monthly_fields[[i]]
-            expect_equal(dim(mfield), c(ncell, nmonth))
+            expect_equal(dim(mfield), c(nmonth, ncell))
 
-            avgval <- rep(i*10, nrow(mfield))
-            expect_equal(apply(mfield, 1, mean), avgval)
+            avgval <- rep(i*10, ncol(mfield))
+            expect_equal(apply(mfield, 2, mean), avgval)
+
+            ## Check that the precip transform can be applied, if this is a
+            ## precip field.
+            if(var == 'pr') {
+                mfield_mm_mon <- expect_silent(pr_conversion(mfield))
+                expect_true(is.matrix(mfield_mm_mon))
+                expect_equal(dim(mfield_mm_mon), c(nmonth, ncell))
+            }
         }
     }
 })
