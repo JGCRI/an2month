@@ -1,0 +1,194 @@
+---
+title: "Exercises in variability downscaling"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+The purpose of this notebook is to explore techniques for downscaling annual totals
+to monthly totals, with variability in the fraction allocated to each month.  
+
+We will exercise our method on a synthetic data set constructed from Poisson-distributed
+random values.  The lambda values will vary by month, so that the summer months have higher
+average values than the winter months; however, the Poisson distribution has variance equal
+to its mean, so there will be a lot of year to year variability in where the largest values are.
+
+```{r}
+i <- 1:12
+lambda <- 10.0 - cos((i-1)/6 * pi)
+plot(i, lambda)
+```
+
+Now, generate 100 years worth of data and put it into a matrix with years in rows.  The
+raw counts are Poisson distributed (adding a small offset so that we don't have zero values,
+which will cause problems later).  The fractions are computed by dividing each row by its sum.
+```{r}
+set.seed(8675309)
+counts <- matrix(0.1 + rpois(1200, lambda=lambda), ncol=12, byrow=TRUE)
+x <- t(apply(counts, 1, function(x){x/sum(x)}))
+```
+
+Here are the first three data, expressed as counts
+```{r}
+plot(i, counts[2,], type='l', lty=2, xlab='Month', ylab='Counts')
+lines(i, counts[1,], lty=1)
+lines(i, counts[3,], lty=3)
+```
+Check that the monthly average counts are what we expect
+```{r}
+mc <- apply(counts, 2, mean)
+plot(i, mc, xlab='Month', ylab='Mean counts')
+```
+This appears to be a plausible approximation to what we put in, given the simulation
+noise.
+
+And expressed as annual fraction
+```{r}
+plot(i, x[2,], type='l', lty=2, xlab='Month', ylab='Fraction')
+lines(i, x[1,], lty=1)
+lines(i, x[3,], lty=3)
+```
+
+We convert these to our unrestricted z values by applying the inverse softmax function
+```{r}
+sminv <- function(x) {x0 <- x[length(x)]; log(x/x0)}
+z <- t(apply(x, 1, sminv))
+```
+
+Let's check on the distributions of these variables.  First define a utility function that
+runs the Shapiro-Wilk test of normality on each column of a matrix and then tells us which
+ones were significantly non-normal.
+```{r}
+swtest <- function(m) {tr <- apply(m, 2, shapiro.test); sapply(tr, function(x) {x$p.value > 0.05})}
+```
+
+
+We *don't* expect the original counts data to be normally distributed, though some columns
+might be able to pass for normal.  (A result of `FALSE` means the values were significantly
+non-normally distributed.)
+```{r}
+swtest(counts)
+```
+Roughly a quarter of the months were rejected by the test; the rest pass as normal, even 
+though we know they're not.
+
+What about the x values?
+```{r}
+swtest(x)
+```
+
+And the z values?  We have to leave off the last column because by definition its values
+are all the same.
+```{r}
+swtest(z[,1:11])
+```
+Several months fail the test.  Not especially promising.  Let's look at the distributions for each
+month (except month 12, of course).
+```{r}
+for(i in 1:11) {
+  hist(z[,i], breaks=20, main=paste('histogram of month', i), xlab='z')
+}
+```
+It looks as if the failures are being driven by outlier points, suggesting that the actual
+distributions have heavier tails than a normal distribution.
+
+We need some sort of parameterized representation of the distribution for each month.  At this
+point our options are
+
+  1. **Ignore the nonnormality and just use a normal distribution with the appropriate mean
+  and standard deviation.**  Advantages: simple and easy.  Disadvantages: probably misses important
+  tail events.  No possibility of skewness.
+  2. **Use a common distribution with heavier tails, such as Student's t.** Advantages: should 
+  readily capture tail events.  Disadvantages: no closed-form way to compute estimators of the 
+  distribution's parameters.
+  3. **Track the empirical distribution functions.** Advantages: can reproduce distribution 
+  with as much fidelity as the input data allow.  Disadvantages: With 12 of these distributions
+  per grid cell, this turns into a lot of data, and probably a lot of calculation.
+  
+  
+Option 2 might just be crazy enough to work.  Here's how we could go about it
+```{r}
+## Create a log-likelihood function.  The parameters for the function are:
+##  c(mu, logsig, df)
+##  mu - the center of the distribution
+##  logsig - log of the scale parameter
+##  df - number of degrees of freedom in the underlying t-distribution
+##
+## To create the function, pass in a set of z-values.
+make_llfun <- function(z) {
+  function(p) {
+    mu <- p[1]
+    logsig <- p[2]
+    sig <- exp(logsig)
+    df <- p[3]
+    
+    zz <- (z-mu)/sig
+    ll <- dt(zz, df=df, log=TRUE) - logsig
+    ## return negative of the sum, so that function can be used with optim
+    -sum(ll)
+  }
+}
+
+## Create a RNG function from the parameters found by an optimization
+make_rfun <- function(p) {
+  mu <- p[1]
+  sig <- exp(p[2])
+  df <- p[3]
+  function(n) {
+    z <- rt(n, df=df)
+    z*sig + mu
+  }
+}
+
+## Create a density function from the parameters found by an optimization
+make_dfun <- function(p) {
+  mu <- p[1]
+  sig <- exp(p[2])
+  df <- p[3]
+  function(x, log=FALSE) {
+    z <- (x-mu)/sig
+    dt(z, df=df)
+  }
+}
+```  
+
+Now we can use `optim` to try to find the best fit parameters for month 1.
+```{r}
+z1 <- z[,1]
+ll <- make_llfun(z1)
+p0 <- c(mean(z1), sd(z1), 10.0)
+
+opt <- optim(p0, ll)
+pf <- opt$par
+pf[2] <- exp(pf[2])  # convert log-sigma to sigma
+pf
+```
+
+Here's the plot of the corresponding density function
+```{r}
+dz1 <- make_dfun(opt$par)
+curve(dz1(x), from=-2, to=2)
+```
+
+And here are some sets of 100 values sampled from that distribution
+```{r}
+rz1 <- make_rfun(opt$par)
+nset <- 4
+z1sim <- matrix(rz1(nset*100), ncol=nset)
+for(i in 1:4) {
+  hist(z1sim[,i], breaks = 20, main=paste('Histogram of z1sim[,', i, ']'))
+}
+```
+
+These look plausibly related to the reference distribution above to me, but we should do some
+quantitative tests.
+```{r}
+apply(z1sim, 2, function(z1){ks.test(z[,1], z1)})
+```
+The K-S test fails to reject any of the sample sets, which suggests that they are probably
+good enough for our purposes here.
+
+So, to get our monthly fractions, we need to do the exercise we just did for `z[,1]` for each
+of the columns in `z`.  Then we can bind those together by columns.  Take the softmax of each
+row, and that is the monthly fractions for the year corresponding to that row.  Implementation 
+is left as an exercise for the reader.
