@@ -1,0 +1,99 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+
+\begin{document}
+\title{Variability in downscaling annual climate totals to monthly}
+\author{Robert Link}
+\date{2018-12-27}
+\maketitle
+
+\begin{abstract}
+In the current version of \texttt{an2month}, our monthly fractions are
+fixed, based on the average values we extract from the ESM data we are
+analyzing.  This is not ideal, especially for the analysis of drought
+risk that we are planning to do in Paper 1.  Variation in the
+distribution of rainfall and temperature throughout the year surely
+play a role in defining the tails of the climate distribution we are
+trying to generate, and it seems likely that this variability is no
+less important to those tails than the year-to-year variation in
+annual averages and totals.
+
+The hard thing in generating variable monthly totals is that the
+monthly values are not independent of one another; they \emph{must}
+add up to the annual total.  Generating constrained random values
+directly is difficult, so instead we will derive a way to estimate the
+parameters of an \emph{unconstrained} multivariate distribution that
+can be transformed into a distribution that respects the constraints.
+\end{abstract}
+
+Let $x_i$ be the observed monthly fractions of the annual total for a
+single year. There will be $N$ such values,
+$\left\lbrace x_1, x_2, \ldots, x_N\right\rbrace$.
+For monthly fractions $N=12$, but the process is the same no matter
+the value of $N$, so we'll leave it unspecified.
+
+Our constraints are that $\sum_{i=1}^{N} x_i = 1$, and for all $i$,
+$0 \le x_i \le 1$.  We can rewrite $x_i$ in terms of
+\emph{unconstrained} variables $z_i$ using the transformation
+\begin{equation}
+  \label{eq:softmax}
+  x_i = \frac{e^{z_i}}{\sum_{j=1}^{N} e^{z_j}}.
+\end{equation}
+This function is commonly called the \emph{softmax} function.  We can
+easily show that for any combination of $z_i \in (-\infty, \infty)$,
+the resulting $x_i$ are between zero and 1, and they sum up to 1,
+satisfying our constraints.
+
+The transformation in equation~(\ref{eq:softmax}) is not unique.  We
+can show that if we add the same constant $\kappa$ to all of the
+$z_i$, then $e^\kappa$ can be factored out of both the numerator and
+the denominator, leaving the $x_i$ unchanged.  This is a direct
+consequence of the fact that, although we have $N$ values, the
+constraint that they must sum to 1 means that there are only $N-1$
+\emph{independent} values.  Once you have chosen those, the last value
+is fixed at 1 minus the sum of the others.
+
+To deal with this ambiguity, define
+\begin{equation}
+  z_N \equiv 0.
+\end{equation}
+This definition allows us to invert equation~(\ref{eq:softmax}) to get
+the $z_i$ from the observed $x_i$.  We do this by working in terms of
+the log-ratio of $x_i$ and $x_N$.
+\begin{equation}
+  \ln\left(\frac{x_i}{x_N}\right) = z_i - z_N = z_i,
+\end{equation}
+where the last step follows because we have defined $z_N$ to be zero.
+
+We are now in a position to get an empirical distribution for the
+$z_i$ from our observed $x$ values.  Let $\vec{x}^{(k)}$ be the set of
+$x_i$ values for the $k$th year of observations, $k \in [1,M]$.  From
+these, we can compute the corresponding set of $\vec{z}^{(k)}$.  For
+each month $i$, the $z_i^{(k)}$ provide an empirical distribution.
+Therefore, to generate a single year's downscaling factors, we have
+only to draw a random set of $z_i$, \emph{independently} from those
+distributions, and compute the corresponding $x_i$ using
+equation~\ref{eq:softmax}.
+
+We still have to find a way to represent these distributions.  There
+will be one for every month, in every grid cell, so it would be best
+to keep the description as compact as possible.  My hope is that the
+$z_i$ will be approximately normally distributed, so we could just
+compute the mean and variance and store them for each combination of
+month and grid cell.  If a normal distribution is \emph{not} a good
+approximation for the distribution of the $z_i$, then we can add a
+couple of parameters to turn the distribution into a generalized
+normal distribution (GND), which should be close enough to the real
+distribution for what we are trying to do here.  Unfortunately, it
+looks like there isn't a way to estimate the parameters for a GND in
+closed form from a set of samples, so if we end up having to go that
+route, we will need to put together a numerical parameter estimation
+subroutine.
+
+Adding this variability to the monthly downscaling will complicate the
+\texttt{an2month} package somewhat, but the payoff will be that we
+will have true monthly variability in our generated data, rather than
+a fixed seasonal variability that merely scales up and down with
+changes in the annual totals.
+
+\end{document}

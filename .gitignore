@@ -5,3 +5,12 @@
 investigations/
 scratch/
 data-raw/
+
+# emacs backup files
+*~
+
+# tex outputs
+*.aux
+*.log
+*.pdf
+
