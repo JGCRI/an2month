@@ -104,9 +104,9 @@ time_mapping <- tibble(month = month, month_name = month_name)
 
 # 3. Save the output as package data ----------------------------------------------------------------------------
 
-`ipsl-cm5a-lr_frac` <- list(tas = tas_frac, pr = pr_frac, coordinates = coordinates, time = time_mapping)
+frac_ipsl_cm5a_lr <- list(tas = tas_frac, pr = pr_frac, coordinates = coordinates, time = time_mapping)
 
-devtools::use_data(`ipsl-cm5a-lr_frac`, overwrite = TRUE)
+devtools::use_data(frac_ipsl_cm5a_lr, overwrite = TRUE)
 
 
 # End
