@@ -1,7 +1,7 @@
 # Purpose: Calculate the average monthly fraction for each grid cell using cdos warpped in R.
 
-# Notes: This script uses CDO and requires a the paths to the CMIP 5 files
-# to process. The CMIP 5 file paths may come from L0 output or may be provided
+# Notes: This script uses CDO and requires a datframe containting the netcdf files
+# to process. The netcdfs paths may come from L0 output or may be provided
 # by the user in section 1.
 
 # Enhancements: for potential code enhancements search TODO in this script
@@ -22,14 +22,13 @@ CDO_DIR     <- "/share/apps/netcdf/4.3.2/gcc/4.4.7/bin/cdo"                     
 
 
 # 1. To process --------------------------------------------------------------------------
-# Determine the ismip files to process.
+# Determine the netcdf files to process, here we are importing the ismip file.
 
  to_process <- readr::read_csv(file.path(BASE, 'data-raw', 'output-L0', 'isimip', 'to_process.csv')) %>%
    select(-date)
 
 
 # 2. Define Functions  -------------------------------------------------------------------
-# TODO some of the check functions may be uncessessary and we may want to remove them.
 
 # check_annualAvg_nc
 # is a function used internally in monthly_fraction to check to make sure that length of time
@@ -149,7 +148,8 @@ check_concatenatedFrac_nc <- function(concatenated_nc, concatenatedFrac_nc){
 
 
 # check__avgFrac_nc
-# is a function that checks the length of time for the monthly average fraction (the final netcdf).
+# is a function that checks the length of time for the monthly average fraction (the final netcdf), is must
+# be divisible by 12.
 check_avgFrac_nc <- function(avgFrac_nc, var, inter_dir){
 
   nc_open(avgFrac_nc) %>%
@@ -157,7 +157,7 @@ check_avgFrac_nc <- function(avgFrac_nc, var, inter_dir){
     length ->
     avgFrac_time
 
-  if(avgFrac_time != 12) {
+  if(!is.integer(avgFrac_time / 12)) {
 
     stop('There is a problem with the number of time steps in ', avgFrac_nc)
 
@@ -167,46 +167,15 @@ check_avgFrac_nc <- function(avgFrac_nc, var, inter_dir){
 
     }
 
-  # Check to make sure that sum of the fractions adds up to around 12
-  # Check to see that the sum of the grid cells across the months equals 12.
-  test_nc <- paste0(TEMP_OUTPUT, 'test_frac.nc')
-  system2(CDO_DIR, args = c("yearsum", avgFrac_nc, test_nc), stdout = TRUE, stderr = TRUE)
-
-  # Import the test nc and check to see if there is only one time setp of data.
-  data_test <- nc_open(test_nc)
-  if(length(ncvar_get(data_test, 'time')) != 1) stop('problem with the number of time steps in ', test_nc)
-
-  # Check to see if there are any values that do not add up to 12
-  var_sum <- ncvar_get(data_test, var)
-
-  # Check to see the summary stats are for the sum of the fractions, the summary stats should equal 12
-  sum_output <- summary(as.vector(var_sum))
-  diff <- sum_output[1:6] - 12
-
-  if(any(abs(diff) > 1e-4)){
-
-    print(sum_output)
-    stop('unexpected values in ', test_nc, ' values expected to add up to 12.')
-
-
-  } else {
-
-    message('summary stats from ', test_nc)
-    print(sum_output)
-
-  }
 
   file.remove(test_nc)
-
-
-
 
 }
 
 
 # monthly_fraction
-# is a fraction that calculates the average monthly fraction
-# of a value for some monthly CMIP 5 variable / model / ensemble file(s). The
+# is a fraction that calculates the monthly fraction
+# of a value for some monthly netcdf variable / model / ensemble file(s). The
 # idea is that this function can be lapply'd to a list of the CMIP 5 files
 # to process.
 
@@ -244,8 +213,8 @@ monthly_fraction <- function(input, cdo_dir, intermediate_dir, output_dir, showM
 
   concatenated_nc     <- paste0(inter_name, '_concatenated.nc')
   annualAvg_nc        <- paste0(inter_name, '_annualAvg.nc')
-  concatenatedFrac_nc <- paste0(inter_name, '_concatenatedFrac.nc')
-  avgFrac_nc          <- paste0(output_name, '_avgFrac.nc')
+  concatenatedFrac_nc <- paste0(inter_name, '_monthlyFrac.nc')
+  #avgFrac_nc          <- paste0(output_name, '_avgFrac.nc')
 
   # If the concatenated files exist they will cause problems
   if(file.exists(concatenated_nc)) stop(concatenated_nc, ' exists and cannot be over written')
@@ -258,7 +227,6 @@ monthly_fraction <- function(input, cdo_dir, intermediate_dir, output_dir, showM
 
   # Calculate the annual average weighted by the number of days in each month.
   if(showMessages) message("Calculate the annual average ", annualAvg_nc)
-  # TODO figure out what is going on with yearmonmean so that we can use the weighted annual average for
   # to calculate the monthly to annual fracations.
   system2(CDO_DIR, args = c("yearmean", concatenated_nc, annualAvg_nc), stdout = TRUE, stderr = TRUE)
 
@@ -299,10 +267,6 @@ monthly_fraction <- function(input, cdo_dir, intermediate_dir, output_dir, showM
   if(showMessages) message("Concatenate monthly fractions together")
   system2(CDO_DIR, args = c("cat", years_ncs$frac_file, concatenatedFrac_nc), stdout = TRUE, stderr = TRUE)
 
-  # Multi year monthly average
-  if(showMessages) message("Multi year monthly average")
-  system2(CDO_DIR, args = c("ymonavg", concatenatedFrac_nc, avgFrac_nc), stdout = TRUE, stderr = TRUE)
-
 
   # Part 3: Run the code tests ----
   # Check the various intermediate to make sure the data looks good. This will increase the function
@@ -316,8 +280,6 @@ monthly_fraction <- function(input, cdo_dir, intermediate_dir, output_dir, showM
 
     check_concatenatedFrac_nc(concatenated_nc, concatenatedFrac_nc)
 
-    check_avgFrac_nc(avgFrac_nc, file_info$variable, TEMP_OUTPUT)
-
     message('passes all tests \n\n')
   }
 
@@ -328,14 +290,13 @@ monthly_fraction <- function(input, cdo_dir, intermediate_dir, output_dir, showM
     # If the saveIntermediates is set to FALSE then remove the intermediate netcdf files
     file.remove(concatenated_nc,
                 annualAvg_nc,
-                concatenatedFrac_nc,
                 years_ncs$frac_file,
                 years_ncs$mon_file,
                 frac_file$year_file)
 
   }
 
-  avgFrac_nc
+  concatenatedFrac_nc
 
 }
 
@@ -353,8 +314,9 @@ lapply(X = input_list, FUN = monthly_fraction,
        intermediate_dir = TEMP_OUTPUT,
        output_dir = OUTPUT,
        showMessages = TRUE,
-       saveIntermediates = TRUE,
-       testOutputs = TRUE) ->
+       saveIntermediates =
+         ,
+       testOutputs = FALSE) ->
   average_monthly_fractions
 
 # End

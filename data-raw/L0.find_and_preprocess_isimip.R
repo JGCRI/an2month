@@ -1,8 +1,9 @@
 
-# Purpose: This script will find and identify the original isimip netcdfs files to process. As of 9/11/2018 we
+# Purpose: This script finds and identifies the original isimip netcdfs files to process. As of 9/11/2018 we
 # only have access to daily isimip netcdfs so this script will average the daily values to get monthly netcdfs.
-# This script will also return a csv file of the netcdfs to process in the subsequent data-raw scripts. See
-# section 0 for set up and see section 1 for the user decsions regarding the isimip files to search for.
+# This script returns a csv file of the netcdfs to process in the subsequent data-raw scripts. See
+# section 0 for set up and section 1 for the user decsions regarding the isimip files to search for.
+#
 # Right now it is set up to run on pic but can run wherever the project, input, and CDO are avaiable.
 
 # 0. Set Up -----------------------------------------------------------------------------
@@ -35,7 +36,7 @@ if(showMessages) message('1. User Decisions')
 # isimip search vectors
 VARIABLES       <- c("tas", "pr")           # isimip variables to process
 EXPERIMENTS     <- "rcp4p5"                 # isimip experiments to process
-MODELS          <- "ipsl-cm5a-lr"           # isimip models to process
+MODELS          <- NULL                     # isimip models to process, so everything
 
 
 # 2. Find the isimip files to process -----------------------------------------------------------------------------------------------------
@@ -92,7 +93,8 @@ tibble(path = file_list) %>%
 # 3. Check coverage  ----------------------------------------------------------------------
 # We need to make sure that we have pr and tas files for each model / experiment / time period.
 isimip_file_info %>%
-  select(-path) %>%
+  select(model, experiment, variable, startYr, endYr) %>%
+  distinct %>%
   mutate(exsists = TRUE) %>%
   spread(variable, exsists) %>%
   gather(variable, exsist, -model, -experiment, -startYr, -endYr) ->
