@@ -1,8 +1,8 @@
 ---
 title: "Exercises in variability downscaling"
 output:
-  pdf_document: default
   html_notebook: default
+  pdf_document: default
 ---
 
 The purpose of this notebook is to explore techniques for downscaling annual totals
@@ -34,11 +34,13 @@ plot(i, counts[2,], type='l', lty=2, xlab='Month', ylab='Counts')
 lines(i, counts[1,], lty=1)
 lines(i, counts[3,], lty=3)
 ```
+
 Check that the monthly average counts are what we expect
 ```{r}
 mc <- apply(counts, 2, mean)
 plot(i, mc, xlab='Month', ylab='Mean counts')
 ```
+
 This appears to be a plausible approximation to what we put in, given the simulation
 noise.
 
@@ -47,12 +49,6 @@ And expressed as annual fraction
 plot(i, x[2,], type='l', lty=2, xlab='Month', ylab='Fraction')
 lines(i, x[1,], lty=1)
 lines(i, x[3,], lty=3)
-```
-
-We convert these to our unrestricted z values by applying the inverse softmax function
-```{r}
-sminv <- function(x) {x0 <- x[length(x)]; log(x/x0)}
-z <- t(apply(x, 1, sminv))
 ```
 
 Let's check on the distributions of these variables.  First define a utility function that
@@ -77,118 +73,74 @@ What about the x values?
 swtest(x)
 ```
 
-And the z values?  We have to leave off the last column because by definition its values
-are all the same.
+We can model the x values as coming from a 
+[Dirichlet distribution](https://stats.stackexchange.com/a/244946).  Fitting this model
+is challenging.  The only thing I've been able to get to work is Monte Carlo sampling 
+using the rstan package. (Unfortunately, this produces a _lot_ of garbage output that 
+can't be suppressed.)
 ```{r}
-swtest(z[,1:11])
-```
-Several months fail the test.  Not especially promising.  Let's look at the distributions for each
-month (except month 12, of course).
-```{r}
-for(i in 1:11) {
-  hist(z[,i], breaks=20, main=paste('histogram of month', i), xlab='z')
-}
-```
-It looks as if the failures are being driven by outlier points, suggesting that the actual
-distributions have heavier tails than a normal distribution.
-
-We need some sort of parameterized representation of the distribution for each month.  At this
-point our options are
-
-  1. **Ignore the nonnormality and just use a normal distribution with the appropriate mean
-  and standard deviation.**  Advantages: simple and easy.  Disadvantages: probably misses important
-  tail events.  No possibility of skewness.
-  2. **Use a common distribution with heavier tails, such as Student's t.** Advantages: should 
-  readily capture tail events.  Disadvantages: no closed-form way to compute estimators of the 
-  distribution's parameters.
-  3. **Track the empirical distribution functions.** Advantages: can reproduce distribution 
-  with as much fidelity as the input data allow.  Disadvantages: With 12 of these distributions
-  per grid cell, this turns into a lot of data, and probably a lot of calculation.
-  
-  
-Option 2 might just be crazy enough to work.  Here's how we could go about it
-```{r}
-## Create a log-likelihood function.  The parameters for the function are:
-##  c(mu, logsig, df)
-##  mu - the center of the distribution
-##  logsig - log of the scale parameter
-##  df - number of degrees of freedom in the underlying t-distribution
-##
-## To create the function, pass in a set of z-values.
-make_llfun <- function(z) {
-  function(p) {
-    mu <- p[1]
-    logsig <- p[2]
-    sig <- exp(logsig)
-    df <- p[3]
-    
-    zz <- (z-mu)/sig
-    ll <- dt(zz, df=df, log=TRUE) - logsig
-    ## return negative of the sum, so that function can be used with optim
-    -sum(ll)
-  }
-}
-
-## Create a RNG function from the parameters found by an optimization
-make_rfun <- function(p) {
-  mu <- p[1]
-  sig <- exp(p[2])
-  df <- p[3]
-  function(n) {
-    z <- rt(n, df=df)
-    z*sig + mu
-  }
-}
-
-## Create a density function from the parameters found by an optimization
-make_dfun <- function(p) {
-  mu <- p[1]
-  sig <- exp(p[2])
-  df <- p[3]
-  function(x, log=FALSE) {
-    z <- (x-mu)/sig
-    dt(z, df=df)
-  }
-}
+library('rstan')
+fit <- stan('monfrac2.stan', data=list(Nyear=100, monfrac_obs=x), iter=2000, verbose=FALSE,
+            refresh=0, chains=1, seed=24601)
+fitdata <- extract(fit)
+xsim <- fitdata$monfrac
 ```  
 
-Now we can use `optim` to try to find the best fit parameters for month 1.
-```{r}
-z1 <- z[,1]
-ll <- make_llfun(z1)
-p0 <- c(mean(z1), sd(z1), 10.0)
+Plotting the Dirichlet distribution is not easy because it's inherently multivariate, and you
+can't change one of the values without changing at least one of the others (because they must
+sum to 1.)  Instead, we can take the samples from the distribution and plot histograms of 
+their marginals.
 
-opt <- optim(p0, ll)
-pf <- opt$par
-pf[2] <- exp(pf[2])  # convert log-sigma to sigma
-pf
-```
-
-Here's the plot of the corresponding density function
 ```{r}
-dz1 <- make_dfun(opt$par)
-curve(dz1(x), from=-2, to=2)
-```
-
-And here are some sets of 100 values sampled from that distribution
-```{r}
-rz1 <- make_rfun(opt$par)
-nset <- 4
-z1sim <- matrix(rz1(nset*100), ncol=nset)
-for(i in 1:4) {
-  hist(z1sim[,i], breaks = 20, main=paste('Histogram of z1sim[,', i, ']'))
+for(i in c(1,4,7,10)) {
+  hist(xsim[,i], breaks = 20, main=paste('Histogram of monthly fractions for month', i))
 }
 ```
 
-These look plausibly related to the reference distribution above to me, but we should do some
-quantitative tests.
-```{r}
-apply(z1sim, 2, function(z1){ks.test(z[,1], z1)})
-```
-The K-S test fails to reject any of the sample sets, which suggests that they are probably
-good enough for our purposes here.
 
-So, to get our monthly fractions, we need to do the exercise we just did for `z[,1]` for each
-of the columns in `z`.  Then we can bind those together by columns.  Take the softmax of each
-row, and that is the monthly fractions for the year corresponding to that row.  Implementation 
-is left as an exercise for the reader.
+We can also plot a pair of months against one another.
+```{r}
+plot(xsim[,1], xsim[,2], xlab='Month 1', ylab='Month 2')
+plot(xsim[,6], xsim[,12], xlab='Month 6', ylab='Month 12')
+```
+
+These look plausibly related to the reference distributions above, but we should do some
+quantitative tests.
+
+```{r}
+suppressWarnings(sapply(1:12, function(i) {ks.test(x[,i], xsim[,i])$p.value}))
+```
+The K-S test fails to reject any of the marginal monthly distributions, which suggests 
+that they are probably good enough for our purposes here.
+
+An alternate possibility, which doesn't involve running a stan program every time, is to 
+find the mean alpha values using stan, then draw from the corresponding Dirichlet distribution
+using `gtools::rdirichlet`.
+
+```{r}
+alpha0 <- apply(fitdata$alpha, 2, mean)
+alpha0
+```
+```{r}
+xsimr <- gtools::rdirichlet(nrow(xsim), alpha0)
+for(i in c(1,4,7,10)) {
+  hist(xsimr[,i], breaks = 20, main=paste('Histogram of monthly fractions for month', i))
+}
+```
+
+```{r}
+suppressWarnings(sapply(1:12, function(i) {ks.test(x[,i], xsimr[,i])$p.value}))
+```
+
+These also seem to be a good match to the input distribution.  Can we even tell the
+difference between the full simulation (i.e., using Stan) and the ones using `rdirichlet`?
+```{r}
+suppressWarnings(sapply(1:12, function(i) {ks.test(xsim[,i], xsimr[,i])$p.value}))
+```
+
+These results suggest that doing the sampling in Stan, instead of in R, doesn't produce
+an appreciably different distribution.  This is good news indeed, as it means that although
+we need to do some Stan runs as part of our data preparation, we can just store the `alpha0`
+parameters for each grid cell as part of the processed model data.  When we actually do our
+analysis runs, we can just feed those parameters into `rdirichlet`, which is both faster and
+produces less junk on the console.
