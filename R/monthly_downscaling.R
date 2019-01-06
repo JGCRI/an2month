@@ -90,6 +90,8 @@ reindex_grid <- function(frac, frac_coordinates, fld_coordinates, var){
 #' @export
 monthly_downscaling <- function(alpha, fld_data, fld_coordinates, fld_time, var){
 
+  igrid <- NULL                         # silence package checks.
+
   # Check the inputs
   if(!is.array(fld_data)){stop('fld_data must be an array')}
   check_names(list = alpha, req_names = c(var, 'coordinates', 'time'), list_name = 'frac input')

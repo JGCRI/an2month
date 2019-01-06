@@ -1,7 +1,16 @@
 
 context('monthly downscaling')
 
-doParallel::registerDoParallel(cores=4)
+## For some reason, setting cores to anything > 1 causes `R CMD check --as-cran`
+## to fail.  Running without the cran setting works with larger core counts.
+## The following test causes the parallel version to be tested when running
+## locally, while still functioning when running under CRAN rules.
+notcran <- Sys.getenv('NOT_CRAN') == 'true'
+if(notcran) {
+    doParallel::registerDoParallel(cores=4)
+} else {
+    doParallel::registerDoParallel(cores=1)
+}
 
 # we are going to want to test that this works with the tas, and pr, and that it does not work with some other things
 # if it throws an error when the fraction has more than 12 months!

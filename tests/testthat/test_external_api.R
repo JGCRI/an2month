@@ -27,7 +27,8 @@ test_that('External API produces valid fields', {
 
     for(var in c('tas','pr')) {
         monthly_fields <-
-            downscaling_component_api('frac_ipsl_cm5a_lr', fields, coord, time, var)
+            downscaling_component_api('frac_ipsl_cm5a_lr', fields, coord, time,
+                                      var, 1)
         ## Check that the fields are correct
         expect_length(monthly_fields, nfield)
         for(i in seq(length(monthly_fields))) {
