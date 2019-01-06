@@ -4,10 +4,10 @@
 \alias{downscaling_component_api}
 \title{Wrapper function for running downscaling from cassandra component}
 \usage{
-downscaling_component_api(frac, fld_data, coords, time, var)
+downscaling_component_api(alpha, fld_data, coords, time, var, ncore = 4)
 }
 \arguments{
-\item{frac}{Name of monthly fraction dataset to use.}
+\item{alpha}{Name of monthly fraction dataset to use.}
 
 \item{fld_data}{List of matrices of annual field data to downscale to monthly.}
 
@@ -18,6 +18,8 @@ produced by \code{\link[fldgen]{coord_array}}.}
 
 \item{var}{String indicating the variable being downscaled.  Either 'tas' or
 'pr'.}
+
+\item{ncore}{Number of cores to use for parallel processing of grid cell data.}
 }
 \value{
 List of matrices of downscaled data.  Grid cells are in columns, months
@@ -30,7 +32,7 @@ by \code{\link{monthly_downscaling}} and pass the converted arguments.
 \details{
 The conversions performed are
 \describe{
-\item{frac}{Dataset is looked up by name.}
+\item{alpha}{Dataset is looked up by name.}
 \item{fld_data}{The downscaling function wants a single matrix.  This
 function accepts a list of matrices and calls the downscaling function on
 each one sequentially.}

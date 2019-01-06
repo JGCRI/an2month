@@ -77,53 +77,61 @@ reindex_grid <- function(frac, frac_coordinates, fld_coordinates, var){
 #'
 #' \code{monthly_downscaling} Use average monthly fractions of annual tas or pr ISMIP/CMIP5 data to downscale annual data to montly values.
 #'
-#' @param frac the matrix of the monthly fractions to use in downscaling, package data for more details on how calculated see data-raw
+#' @param alpha Matrix[ngrid, 12] of the alpha parameters for the Dirichlet
+#' distribution.  These values are included as package data.  For more details
+#' on how they are calculated see data-raw.
 #' @param fld_data the 2d array of ntime x ngrid of the data to be downscaled, this object should be a flattened 3-D array, where latitude
 #' the most rapidly varying index for the individual time slices.
 #' @param fld_coordinates a data frame of the grid cells coordinates for the field matrix.
 #' @param fld_time a vector of the field time values.
 #' @param var the string of the variable to process.
-#' @importFrom  foreach %do%
+#' @importFrom  foreach %do% %dopar%
 #' @return a list containing the monthly downsaceld 2d array and a
 #' @export
-monthly_downscaling <- function(frac, fld_data, fld_coordinates, fld_time, var){
-
-  # Silence package checks
-  'mon_num' <- NULL
+monthly_downscaling <- function(alpha, fld_data, fld_coordinates, fld_time, var){
 
   # Check the inputs
   if(!is.array(fld_data)){stop('fld_data must be an array')}
-  check_names(list = frac, req_names = c(var, 'coordinates', 'time'), list_name = 'frac input')
+  check_names(list = alpha, req_names = c(var, 'coordinates', 'time'), list_name = 'frac input')
 
   # Re-index the grid cells so that the monthly fractions used in the downscaling and the data being downscaled
   # have the same latitude and longitude coordinate system. This is important when working with ISIMIP and CMIP files.
-  # Since the ISMIP data only
-  frac <- reindex_grid(frac, frac$coordinates, fld_coordinates, var)
-  if(nrow(frac) != 12) stop('there must be 12 rows one for each month, in the frac input')
+  # Since the ISMIP data only has data for grid cells over land.
+  alpha <- reindex_grid(alpha, alpha$coordinates, fld_coordinates, var)
+  if(nrow(alpha) != 12) stop('there must be 12 rows one for each month, in the alpha input')
 
   # Start temporal downscaling
-  # First replicate the data frame 12 times, so that there is a copy of the the annual grid cells for each month.
-  # Latter on we will multiply each of copy by the monthly fractions.
-  row.names(fld_data) <- fld_time
-  fld_12         <- replicate(n = 12, fld_data, simplify = FALSE)
+  nyear   <- nrow(fld_data)        # number of years
 
-  # Copy time information
-  yr_fld   <- nrow(fld_data)        # number of years
-  month_ch <- sprintf('%02d', 1:12) # string version of month number
+  ## Temperature values are averages, but we need totals, so multiply these values
+  ## by 12.  Precipitation values require no adjustment
+  if(var == 'tas') {
+    fld_data <- fld_data * 12
+  }
 
-  # Multiply each copy of the annual data by a single monthly fraction
-  monthly_data_unordered <- foreach::foreach(mon_num = 1:nrow(frac), .combine = 'rbind') %do% {
+  ## Loop over grid cells; for each grid cell, generate yr_fld sets of monthly
+  ## fractions, and apply them to the annual total.
+  ngrid <- ncol(fld_data)
+  monthly_data <- foreach::foreach(igrid = 1:ngrid, .combine='cbind') %dopar% {
+    monthly_fractions <- gtools::rdirichlet(nyear, alpha[,igrid]) # matrix[nyear,12]
+    annual_totals <- fld_data[,igrid]                             # vector[nyear]
 
-    month_frac <- matrix(rep(frac[mon_num, ], yr_fld), nrow = yr_fld, byrow = TRUE)     # Copy the monthly fraction so that is matches the annual grid dimensions
-    monthly    <- fld_12[[mon_num]] * month_frac                                        # Multiply annual by monthly
-    row.names(monthly) <- paste0(fld_time, month_ch[mon_num])                           # Name rows and return
-    monthly
+    ## This next part works because multiplying two vectors of unequal length
+    ## recycles the shorter vector.  Because data in matrices varies most
+    ## rapidly along the rows, this has the effect of multiplying m[i,] by v[i].
+    monthly_totals <- monthly_fractions * annual_totals # matrix[nyear, 12]
 
-    }
+    ## Now we need to flatten this into a vector.  We want all the months from a
+    ## single year to be together, so we need to transpose.
+    as.vector(t(monthly_totals))
+  }
 
-  # Organize monthly down scaled results by yearmonth
-  order        <- order(as.integer(row.names(monthly_data_unordered)))
-  monthly_data <- monthly_data_unordered[row.names(monthly_data_unordered)[order], ]
+  ## We need to add the time codes as row names.  We now have 12x as many rows
+  ## as we used to, so we need to do some replicating
+  year_code <- rep(fld_time, rep(12, length(fld_time))) # Each time code gets
+                                        # repeated 12 times in succession
+  month_code <- seq(from=0, length.out=length(year_code)) %% 12 + 1
+  row.names(monthly_data) <- sprintf('%04d%02d', year_code, month_code)
 
   # Return the monthly data and the coordinates as a list
   list(data = monthly_data, coordinates = fld_coordinates)
@@ -138,7 +146,7 @@ monthly_downscaling <- function(frac, fld_data, fld_coordinates, fld_time, var){
 #'
 #' The conversions performed are
 #' \describe{
-#' \item{frac}{Dataset is looked up by name.}
+#' \item{alpha}{Dataset is looked up by name.}
 #' \item{fld_data}{The downscaling function wants a single matrix.  This
 #' function accepts a list of matrices and calls the downscaling function on
 #' each one sequentially.}
@@ -148,20 +156,23 @@ monthly_downscaling <- function(frac, fld_data, fld_coordinates, fld_time, var){
 #' \item{var}{No conversion.}
 #' }
 #'
-#' @param frac Name of monthly fraction dataset to use.
+#' @param alpha Name of monthly fraction dataset to use.
 #' @param fld_data List of matrices of annual field data to downscale to monthly.
 #' @param coords Coordinate matrix for the field data, such as the one
 #' produced by \code{\link[fldgen]{coord_array}}.
 #' @param time Vector of years for the input field matrices.
 #' @param var String indicating the variable being downscaled.  Either 'tas' or
 #' 'pr'.
+#' @param ncore Number of cores to use for parallel processing of grid cell data.
 #' @return List of matrices of downscaled data.  Grid cells are in columns, months
 #' in rows.
 #' @export
 #' @keywords internal
-downscaling_component_api <- function(frac, fld_data, coords, time, var)
+downscaling_component_api <- function(alpha, fld_data, coords, time, var, ncore=4)
 {
-    frac <- get(frac)   # would be better to use getFromNamespace, but it doesn't seem to work.
+    alpha <- get(alpha)   # would be better to use getFromNamespace, but it doesn't seem to work.
+
+    doParallel::registerDoParallel(cores=ncore)
 
     if(is.null(colnames(coords)))
         colnames(coords) <- c('lat','lon') # Won't be necessary if you use the
@@ -172,7 +183,8 @@ downscaling_component_api <- function(frac, fld_data, coords, time, var)
     ## return the list of downscaled fields
     lapply(fld_data,
            function(f) {
-               md <- monthly_downscaling(frac, f, fld_coordinates, time, var)
+               md <- monthly_downscaling(alpha, f, fld_coordinates, time, var)
+               colnames(md$data) <- NULL
                md$data
            })
 

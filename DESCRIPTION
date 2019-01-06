@@ -1,7 +1,7 @@
 Package: an2month
 Type: Package
 Title: Monthly Downscaling of CMIP/ISIMIP tas and pr
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: c(person("Robert", "Link", role = "aut"),
           person("Kalyn", "Dorheim", 
           email = "kalyn.dorheim@pnnl.gov", 
@@ -13,6 +13,8 @@ Imports:
     dplyr (>= 0.7.0),
     lubridate (>= 1.7.1),
     foreach (>= 1.4.0),
+    doParallel (>= 1.0.10),
+    gtools (>= 3.5.0),
 Suggests:
     testthat (>= 0.2)
 Encoding: UTF-8
