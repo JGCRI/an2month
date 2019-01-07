@@ -1,0 +1,146 @@
+---
+title: "Exercises in variability downscaling"
+output:
+  html_notebook: default
+  pdf_document: default
+---
+
+The purpose of this notebook is to explore techniques for downscaling annual totals
+to monthly totals, with variability in the fraction allocated to each month.  
+
+We will exercise our method on a synthetic data set constructed from Poisson-distributed
+random values.  The lambda values will vary by month, so that the summer months have higher
+average values than the winter months; however, the Poisson distribution has variance equal
+to its mean, so there will be a lot of year to year variability in where the largest values are.
+
+```{r}
+i <- 1:12
+lambda <- 10.0 - cos((i-1)/6 * pi)
+plot(i, lambda)
+```
+
+Now, generate 100 years worth of data and put it into a matrix with years in rows.  The
+raw counts are Poisson distributed (adding a small offset so that we don't have zero values,
+which will cause problems later).  The fractions are computed by dividing each row by its sum.
+```{r}
+set.seed(8675309)
+counts <- matrix(0.1 + rpois(1200, lambda=lambda), ncol=12, byrow=TRUE)
+x <- t(apply(counts, 1, function(x){x/sum(x)}))
+```
+
+Here are the first three data, expressed as counts
+```{r}
+plot(i, counts[2,], type='l', lty=2, xlab='Month', ylab='Counts')
+lines(i, counts[1,], lty=1)
+lines(i, counts[3,], lty=3)
+```
+
+Check that the monthly average counts are what we expect
+```{r}
+mc <- apply(counts, 2, mean)
+plot(i, mc, xlab='Month', ylab='Mean counts')
+```
+
+This appears to be a plausible approximation to what we put in, given the simulation
+noise.
+
+And expressed as annual fraction
+```{r}
+plot(i, x[2,], type='l', lty=2, xlab='Month', ylab='Fraction')
+lines(i, x[1,], lty=1)
+lines(i, x[3,], lty=3)
+```
+
+Let's check on the distributions of these variables.  First define a utility function that
+runs the Shapiro-Wilk test of normality on each column of a matrix and then tells us which
+ones were significantly non-normal.
+```{r}
+swtest <- function(m) {tr <- apply(m, 2, shapiro.test); sapply(tr, function(x) {x$p.value > 0.05})}
+```
+
+
+We *don't* expect the original counts data to be normally distributed, though some columns
+might be able to pass for normal.  (A result of `FALSE` means the values were significantly
+non-normally distributed.)
+```{r}
+swtest(counts)
+```
+Roughly a quarter of the months were rejected by the test; the rest pass as normal, even 
+though we know they're not.
+
+What about the x values?
+```{r}
+swtest(x)
+```
+
+We can model the x values as coming from a 
+[Dirichlet distribution](https://stats.stackexchange.com/a/244946).  Fitting this model
+is challenging.  The only thing I've been able to get to work is Monte Carlo sampling 
+using the rstan package. (Unfortunately, this produces a _lot_ of garbage output that 
+can't be suppressed.)
+```{r}
+library('rstan')
+fit <- stan('monfrac2.stan', data=list(Nyear=100, monfrac_obs=x), iter=2000, verbose=FALSE,
+            refresh=0, chains=1, seed=24601)
+fitdata <- extract(fit)
+xsim <- fitdata$monfrac
+```  
+
+Plotting the Dirichlet distribution is not easy because it's inherently multivariate, and you
+can't change one of the values without changing at least one of the others (because they must
+sum to 1.)  Instead, we can take the samples from the distribution and plot histograms of 
+their marginals.
+
+```{r}
+for(i in c(1,4,7,10)) {
+  hist(xsim[,i], breaks = 20, main=paste('Histogram of monthly fractions for month', i))
+}
+```
+
+
+We can also plot a pair of months against one another.
+```{r}
+plot(xsim[,1], xsim[,2], xlab='Month 1', ylab='Month 2')
+plot(xsim[,6], xsim[,12], xlab='Month 6', ylab='Month 12')
+```
+
+These look plausibly related to the reference distributions above, but we should do some
+quantitative tests.
+
+```{r}
+suppressWarnings(sapply(1:12, function(i) {ks.test(x[,i], xsim[,i])$p.value}))
+```
+The K-S test fails to reject any of the marginal monthly distributions, which suggests 
+that they are probably good enough for our purposes here.
+
+An alternate possibility, which doesn't involve running a stan program every time, is to 
+find the mean alpha values using stan, then draw from the corresponding Dirichlet distribution
+using `gtools::rdirichlet`.
+
+```{r}
+alpha0 <- apply(fitdata$alpha, 2, mean)
+alpha0
+```
+```{r}
+xsimr <- gtools::rdirichlet(nrow(xsim), alpha0)
+for(i in c(1,4,7,10)) {
+  hist(xsimr[,i], breaks = 20, main=paste('Histogram of monthly fractions for month', i))
+}
+```
+
+```{r}
+suppressWarnings(sapply(1:12, function(i) {ks.test(x[,i], xsimr[,i])$p.value}))
+```
+
+These also seem to be a good match to the input distribution.  Can we even tell the
+difference between the full simulation (i.e., using Stan) and the ones using `rdirichlet`?
+```{r}
+suppressWarnings(sapply(1:12, function(i) {ks.test(xsim[,i], xsimr[,i])$p.value}))
+```
+
+These results suggest that doing the sampling in Stan, instead of in R, doesn't produce
+an appreciably different distribution.  This is good news indeed, as it means that although
+we need to do some Stan runs as part of our data preparation, we can just store the `alpha0`
+parameters for each grid cell as part of the processed model data.  When we actually do our
+analysis runs, we can just feed those parameters into `rdirichlet`, which is both faster and
+produces less junk on the console.

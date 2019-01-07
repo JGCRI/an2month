@@ -4,10 +4,12 @@
 \alias{monthly_downscaling}
 \title{Downscale annual data to monthly data.}
 \usage{
-monthly_downscaling(frac, fld_data, fld_coordinates, fld_time, var)
+monthly_downscaling(alpha, fld_data, fld_coordinates, fld_time, var)
 }
 \arguments{
-\item{frac}{the matrix of the monthly fractions to use in downscaling, package data for more details on how calculated see data-raw}
+\item{alpha}{Matrix[ngrid, 12] of the alpha parameters for the Dirichlet
+distribution.  These values are included as package data.  For more details
+on how they are calculated see data-raw.}
 
 \item{fld_data}{the 2d array of ntime x ngrid of the data to be downscaled, this object should be a flattened 3-D array, where latitude
 the most rapidly varying index for the individual time slices.}

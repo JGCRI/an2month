@@ -27,15 +27,23 @@ test_that('External API produces valid fields', {
 
     for(var in c('tas','pr')) {
         monthly_fields <-
-            downscaling_component_api('frac_ipsl_cm5a_lr', fields, coord, time, var)
+            downscaling_component_api('frac_ipsl_cm5a_lr', fields, coord, time,
+                                      var, 1)
         ## Check that the fields are correct
-        expect_equal(length(monthly_fields), nfield)
+        expect_length(monthly_fields, nfield)
         for(i in seq(length(monthly_fields))) {
             mfield <- monthly_fields[[i]]
             expect_equal(dim(mfield), c(nmonth, ncell))
 
             avgval <- rep(i*10, ncol(mfield))
-            expect_equal(apply(mfield, 2, mean), avgval)
+            if(var=='tas') {
+                expect_equal(apply(mfield, 2, mean), avgval,
+                             info='mean temperature not equal to expected mean')
+            }
+            else {
+                expect_equal(apply(mfield, 2, sum), avgval*ntime,
+                             info='total precip not equal to expected total')
+            }
 
             ## Check that the precip transform can be applied, if this is a
             ## precip field.
