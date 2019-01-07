@@ -9,8 +9,4 @@ model {
   for (year in 1:Nyear)
     monfrac_obs[year] ~ dirichlet(alpha);
 }
-generated quantities {
-  simplex[12] monfrac;
-  monfrac = dirichlet_rng(alpha);
-}
 
