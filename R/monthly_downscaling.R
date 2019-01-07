@@ -114,7 +114,12 @@ monthly_downscaling <- function(alpha, fld_data, fld_coordinates, fld_time, var)
   ## Loop over grid cells; for each grid cell, generate yr_fld sets of monthly
   ## fractions, and apply them to the annual total.
   ngrid <- ncol(fld_data)
+  rngstate <- .Random.seed
   monthly_data <- foreach::foreach(igrid = 1:ngrid, .combine='cbind') %dopar% {
+    ## Use the same rng state for each grid cell.  This prevents us from having
+    ## excessive spatial variation within a single month.
+    .Random.seed <<- rngstate
+
     monthly_fractions <- gtools::rdirichlet(nyear, alpha[,igrid]) # matrix[nyear,12]
     annual_totals <- fld_data[,igrid]                             # vector[nyear]
 

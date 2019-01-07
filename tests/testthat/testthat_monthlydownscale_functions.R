@@ -59,6 +59,15 @@ test_that('monthly downscaling', {
   expect_equal(tas_rslt$coordinates, fld$coordinates)
   expect_equal(nrow(tas_rslt$data), 12 * length(fld$time))
 
+  ## Since the grids in the test data have the same mean and same Dirichlet
+  ## parameters, they should have the same values (this will not be the case for
+  ## two cells that have different annual values, _or_ different Dirichlet
+  ## parameters).
+  for(col in seq(1,ncol(fld$fullgrids$tas))) {
+      expect_equal(tas_rslt$data[,1], tas_rslt$data[,col],
+                   info=paste('In tas downscaling: discrepancy between column 1 and column', col))
+  }
+
   ## Check that each year's mean is equal to the annual value.  Also, check that each
   ## year is different from its predecessor.
   for(yr in seq_along(fld$time)) {
