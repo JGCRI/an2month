@@ -1,5 +1,6 @@
 
-# Purpose: Format the monthly fraction netcdfs from L1A into an array[nyear, nmonth, ngrid].
+# Purpose: Format the monthly fraction netcdfs from L1A into an array[nyear, nmonth, ngrid].This is 
+# set up to run on pic. Users will want to change the dirs defined in the section 0. 
 
 # 0. Set Up -----------------------------------------------------------------------------------
 
@@ -21,7 +22,7 @@ library(ncdf4)
 netcdfs <- list.files(INPUT, pattern = '.nc', full.names = TRUE)
 
 # Import the missing cells mapping file
-NA_mapping <- read.table('C:/Users/dorh012/Documents/an2month/data-raw/mapping/missing_cells_mapping.tsv')
+NA_mapping <- read.table(file.path(BASE, 'mapping', 'missing_cells_mapping.tsv'))
 
 # 2. Define functions ------------------------------------------------------------
 
@@ -56,13 +57,6 @@ format_data <- function(input_path, var, output_dir){
   # Flatten the matrix by the grid cells
   dim(data_t) <- c(ntime, ngrid)
 
-  # Format the 2d matrix by year, 12, gridcell
-  dim(data_t) <- c(nyears, 12, ngrid)
-
-  # Add names to the array
-  dimnames(data_t)[[1]] <- unique(substr(time, 1, 4))
-  dimnames(data_t)[[2]] <- c("January", "February", "March", "April", "May", "June", "July", "August",
-                             "September", "October", "November", "December")
 
   # Only for the pr in the Sharah desert replace the monthly fractions with 1/12 to avoid
   # problems latter on. This problem does not occur with temp.
@@ -92,6 +86,14 @@ format_data <- function(input_path, var, output_dir){
     data_t[ , replace$column_index] <- 1/12
 
   }
+
+  # Format the 2d matrix by year, 12, gridcell
+  dim(data_t) <- c(nyears, 12, ngrid)
+
+  # Add names to the array
+  dimnames(data_t)[[1]] <- unique(substr(time, 1, 4))
+  dimnames(data_t)[[2]] <- c("January", "February", "March", "April", "May", "June", "July", "August",
+                             "September", "October", "November", "December")
 
   # Save the array as an rds
   saveRDS(data_t, file = file.path(output_dir, gsub(basename(input_path), pattern = '.nc', replacement = '.rds')))

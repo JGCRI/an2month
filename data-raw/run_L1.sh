@@ -12,7 +12,7 @@ module load R/3.4.3
 now=$(date)
 echo "Current time : $now"
 
-Rscript /pic/projects/GCAM/Dorheim/grand_exp/an2month/data-raw/L1A.monthly_fractions.R --nosave --no-restore
+Rscript /pic/projects/GCAM/Dorheim/frontEnd_grandExp/an2month/data-raw/L1B.format_monthly_fractions.R --nosave --no-restore
 
 now=$(date)
 echo "Current time : $now"
