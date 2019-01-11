@@ -122,7 +122,7 @@ procmodel <- function(modelidx, test=FALSE)
     assign(output_var, outdata)
 
     message('Output var is', output_var)
-    use_data(as.name(output_var), overwrite=TRUE, compress='xz')
+    do.call(use_data, list(as.name(output_var), overwrite=TRUE, compress='xz'))
     invisible(outdata)
 }
 
