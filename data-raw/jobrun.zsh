@@ -14,8 +14,9 @@ scontrol show hostnames > $nodefile
 tid=$SLURM_ARRAY_TASK_ID
 
 program="./L3.fit_dirichlet_params.R"
+outdir="./output-L3"
 
-cmd="source('$program'); procmodel($tid, nodefile='$nodefile', nproc=$SLURM_NTASKS)"
+cmd="source('$program'); procmodel($tid, outdir='$outdir', nodefile='$nodefile', nproc=$SLURM_NTASKS)"
 echo "Run command:"
 echo $cmd
 

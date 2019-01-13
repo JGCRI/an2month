@@ -134,7 +134,7 @@ nccoord <- function(infile)
 
 
 ### Process a model
-procmodel <- function(modelidx, test=0, write_data=TRUE, nodefile=NULL, nproc=4)
+procmodel <- function(modelidx, test=0, outdir='.', write_data=TRUE, nodefile=NULL, nproc=4)
 ### :param modelidx: Index into the modelnames array above
 {
     model <- modelnames[modelidx]
@@ -159,7 +159,7 @@ procmodel <- function(modelidx, test=0, write_data=TRUE, nodefile=NULL, nproc=4)
     alpha_tas <- dirfit(fracdata_tas, test=test)
 
     ## Create coordinate structure
-    ncfile <- file.path('output-L1', paste0('pr_', model, '_monthlyFrac.nc'))
+    ncfile <- file.path(outdir, paste0('pr_', model, '_monthlyFrac.nc'))
     coord <- nccoord(ncfile)
 
     ## The 'time' element of the final output
