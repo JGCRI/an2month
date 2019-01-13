@@ -56,7 +56,7 @@ dirfit <- function(monfrac, stanfile='dirichlet-fit.stan', chkzero=TRUE, test=0)
 {
 
     ## Find the valid cells.
-    goodcells <- which(apply(monfrac, 3, function(v) {!is.na(v[1])}))
+    goodcells <- which(apply(monfrac, 3, function(v) {!all(is.na(v))}))
     ## Check that all the good cells have valid data and none of the bad cells
     ## do.  Also, there should be exactly 67420 good cells.
     if(test>0) {
@@ -66,7 +66,8 @@ dirfit <- function(monfrac, stanfile='dirichlet-fit.stan', chkzero=TRUE, test=0)
     else {
         ## These tests are only guaranteed to be valid if we're working with a
         ## full dataset.
-        assert_that(length(goodcells) == 67420)
+        assert_that(length(goodcells) == 67420, 
+	            msg=paste("Expected 67420 good cells, found", length(goodcells)))
         assert_that(all(is.na(monfrac[ , , -goodcells])))
     }
     assert_that(!any(is.na(monfrac[ , ,goodcells])))
