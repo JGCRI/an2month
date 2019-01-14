@@ -70,7 +70,6 @@ dirfit <- function(monfrac, stanfile='dirichlet-fit.stan', chkzero=TRUE, test=0)
 	            msg=paste("Expected 67420 good cells, found", length(goodcells)))
         assert_that(all(is.na(monfrac[ , , -goodcells])))
     }
-    assert_that(!any(is.na(monfrac[ , ,goodcells])))
 
     ## Clean up the data
     if(chkzero) {
@@ -82,6 +81,9 @@ dirfit <- function(monfrac, stanfile='dirichlet-fit.stan', chkzero=TRUE, test=0)
         monfrac_good[monfrac_good < minval] <- minval
         monfrac[ , , goodcells] <- monfrac_good
     }
+    else {
+        assert_that(!any(is.na(monfrac[ , ,goodcells])))
+    }
 
     ## Compile the stan model
     stanmod <- stan_model(stanfile)
@@ -89,7 +91,7 @@ dirfit <- function(monfrac, stanfile='dirichlet-fit.stan', chkzero=TRUE, test=0)
     nyear <- dim(monfrac)[1]
 
     alpha_fit <-
-        foreach(igrid=goodcells) %dopar% {
+        foreach(igrid=goodcells, .packages='rstan') %dopar% {
             obs <- monfrac[, , igrid]
             ## The monthly values don't necessarily all sum to 1 (e.g. for
             ## temperature they should sum to something close to 12).  Normalize
