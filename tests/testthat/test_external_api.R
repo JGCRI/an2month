@@ -36,14 +36,9 @@ test_that('External API produces valid fields', {
             expect_equal(dim(mfield), c(nmonth, ncell))
 
             avgval <- rep(i*10, ncol(mfield))
-            if(var=='tas') {
-                expect_equal(apply(mfield, 2, mean), avgval,
-                             info='mean temperature not equal to expected mean')
-            }
-            else {
-                expect_equal(apply(mfield, 2, sum), avgval*ntime,
-                             info='total precip not equal to expected total')
-            }
+            expect_equal(apply(mfield, 2, mean), avgval,
+                         info='mean temperature not equal to expected mean')
+
 
             ## Check that the precip transform can be applied, if this is a
             ## precip field.

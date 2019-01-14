@@ -92,11 +92,11 @@ test_that('monthly downscaling', {
   expect_equal(pr_rslt$coordinates, fld$coordinates)
   expect_equal(nrow(pr_rslt$data), 12 * length(fld$time))
 
-  ## Check that each year's _total_ is equal to the annual value.  Again, check that each
+  ## Check that each year's _mean_ is equal to the annual value.  Again, check that each
   ## year is different from its predecessor
   for(yr in seq_along(fld$time)) {
     idx <- (yr-1)*12 + seq(1,12)
-    annual_pr <- apply(pr_rslt$data[idx,], 2, sum)
+    annual_pr <- apply(pr_rslt$data[idx,], 2, mean)
     expect_equivalent(annual_pr, rep(an_pr_val, ncol(pr_rslt$data)),
                       info=paste('Total precipitation not preserved in year', yr))
     if(yr > 1) {

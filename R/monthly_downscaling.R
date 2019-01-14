@@ -105,11 +105,9 @@ monthly_downscaling <- function(alpha, fld_data, fld_coordinates, fld_time, var)
   # Start temporal downscaling
   nyear   <- nrow(fld_data)        # number of years
 
-  ## Temperature values are averages, but we need totals, so multiply these values
-  ## by 12.  Precipitation values require no adjustment
-  if(var == 'tas') {
-    fld_data <- fld_data * 12
-  }
+  ## Annual values are averages, but we need totals, so multiply these values
+  ## by 12.
+  fld_data <- fld_data * 12
 
   ## Loop over grid cells; for each grid cell, generate yr_fld sets of monthly
   ## fractions, and apply them to the annual total.
