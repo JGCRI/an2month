@@ -162,17 +162,21 @@ procmodel <- function(modelidx, test=0, outdir='.', write_data=TRUE, nodefile=NU
         registerDoParallel(cores=nproc)
     }
 
+    ## checkpoint dir
+    ckptdir <- file.path(outdir, paste0('ckpt-',model))
+    dir.create(ckptdir)
+
     ## Precipitation fractions
     pr_frac_file <- file.path('output-L1', paste0('pr_', model,
                                                   '_monthlyFrac.nc'))
     fracdata_pr <- readnc(pr_frac_file, 'pr')
-    alpha_pr <- dirfit(fracdata_pr, outdir, test=test, chkzero=TRUE)
+    alpha_pr <- dirfit(fracdata_pr, ckptdir, test=test, chkzero=TRUE)
 
     ## Temperature fractions
     tas_frac_file <- file.path('output-L1', paste0('tas_', model,
                                                    '_monthlyFrac.nc'))
     fracdata_tas <- readnc(tas_frac_file, 'tas')
-    alpha_tas <- dirfit(fracdata_tas, outdir, test=test)
+    alpha_tas <- dirfit(fracdata_tas, ckptdir, test=test)
 
     ## Create coordinate structure
     ncfile <- file.path('output-L1', paste0('pr_', model, '_monthlyFrac.nc'))
