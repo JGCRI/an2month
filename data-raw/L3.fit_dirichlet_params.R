@@ -91,7 +91,7 @@ dirfit <- function(monfrac, outdir, stanfile='dirichlet-fit.stan', chkzero=TRUE,
 
     nyear <- dim(monfrac)[1]
 
-    nbatch <- 3
+    nbatch <- 10
     ntot <- length(goodcells)
     batchlen <- as.integer(ceiling(ntot / nbatch))
     alpha <- matrix(nrow=12, ncol=dim(monfrac)[3])

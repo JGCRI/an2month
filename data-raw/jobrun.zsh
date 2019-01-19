@@ -1,7 +1,7 @@
 #!/bin/zsh
 
-#SBATCH -n 96
-#SBATCH -t 24:0:0
+#SBATCH -n 120
+#SBATCH -t 144:0:0
 #SBATCH -A GCAM
 
 date
