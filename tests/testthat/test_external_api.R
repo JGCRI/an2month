@@ -9,7 +9,7 @@ test_that('External API produces valid fields', {
     nfield <- 3
 
     ## Find 10 representative grid cells to use in our test
-    testcells <- which(!is.na(frac_ipsl_cm5a_lr$tas[1, ]))[1:ncell]
+    testcells <- which(!is.na(alpha_ipsl_cm5a_lr$tas[1, ]))[1:ncell]
 
     ## make some field data
     fields <-
@@ -19,7 +19,7 @@ test_that('External API produces valid fields', {
                })
 
     ## Construct the coordinate data
-    coord <- as.matrix(frac_ipsl_cm5a_lr$coordinates[testcells, c('lat','lon')])
+    coord <- as.matrix(alpha_ipsl_cm5a_lr$coord[testcells, c('lat','lon')])
 
     ## time vector
     time <- 2005 + seq(ntime)
@@ -27,7 +27,7 @@ test_that('External API produces valid fields', {
 
     for(var in c('tas','pr')) {
         monthly_fields <-
-            downscaling_component_api('frac_ipsl_cm5a_lr', fields, coord, time,
+            downscaling_component_api('alpha_ipsl_cm5a_lr', fields, coord, time,
                                       var, 1)
         ## Check that the fields are correct
         expect_length(monthly_fields, nfield)
