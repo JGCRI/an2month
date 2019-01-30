@@ -94,22 +94,20 @@ monthly_downscaling <- function(alpha, fld_data, fld_coordinates, fld_time, var)
 
   # Check the inputs
   if(!is.array(fld_data)){stop('fld_data must be an array')}
-  check_names(list = alpha, req_names = c(var, 'coordinates', 'time'), list_name = 'frac input')
+  check_names(list = alpha, req_names = c(var, 'coord', 'time'), list_name = 'frac input')
 
   # Re-index the grid cells so that the monthly fractions used in the downscaling and the data being downscaled
   # have the same latitude and longitude coordinate system. This is important when working with ISIMIP and CMIP files.
   # Since the ISMIP data only has data for grid cells over land.
-  alpha <- reindex_grid(alpha, alpha$coordinates, fld_coordinates, var)
+  alpha <- reindex_grid(alpha, alpha$coord, fld_coordinates, var)
   if(nrow(alpha) != 12) stop('there must be 12 rows one for each month, in the alpha input')
 
   # Start temporal downscaling
   nyear   <- nrow(fld_data)        # number of years
 
-  ## Temperature values are averages, but we need totals, so multiply these values
-  ## by 12.  Precipitation values require no adjustment
-  if(var == 'tas') {
-    fld_data <- fld_data * 12
-  }
+  ## Annual values are averages, but we need totals, so multiply these values
+  ## by 12.
+  fld_data <- fld_data * 12
 
   ## Loop over grid cells; for each grid cell, generate yr_fld sets of monthly
   ## fractions, and apply them to the annual total.

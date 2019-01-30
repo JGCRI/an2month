@@ -4,7 +4,9 @@
 .Ruserdata
 investigations/
 scratch/
-data-raw/
+data-raw/output*
+data-raw/mapping
+
 
 # emacs backup files
 *~

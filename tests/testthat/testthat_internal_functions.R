@@ -38,15 +38,15 @@ test_that('reindex_grid', {
   #
   # Make sure that errors are thrown when bad inputs are used in the function.
   fld_coord1 <- data.frame(column_index = 1:4, lat = 5:6, lon = 20)
-  expect_error(reindex_grid(frac = frac, frac_coordinates = frac$coordinates, fld_coordinates = fld_coord1, var = 'tas'),
+  expect_error(reindex_grid(frac = frac, frac_coordinates = frac$coord, fld_coordinates = fld_coord1, var = 'tas'),
                'fraction file is missing lat values')
 
   fld_coord2 <- data.frame(column_index = 1:4, lat =  10:13, lon = 19)
-  expect_error(reindex_grid(frac = frac, frac_coordinates = frac$coordinates, fld_coordinates = fld_coord2, var = 'tas'),
+  expect_error(reindex_grid(frac = frac, frac_coordinates = frac$coord, fld_coordinates = fld_coord2, var = 'tas'),
                'fraction file is missing lon values')
 
   fld_coord3 <- data.frame(column_index = 1:9, lat = 10:18, lon = 20)
-  expect_error(reindex_grid(frac = frac, frac_coordinates = frac$coordinates, fld_coordinates = fld_coord3, var = 'tas'),
+  expect_error(reindex_grid(frac = frac, frac_coordinates = frac$coord, fld_coordinates = fld_coord3, var = 'tas'),
                'Resolution of the monthly fraction coordinates is insufficient')
 
   # Expected Output
@@ -59,7 +59,7 @@ test_that('reindex_grid', {
   # Modify one of the fraction values to make sure that we are selecting the correct grid cells with this function
   frac$tas[1, 4] <- 10
   frac$tas[2, 2] <- 6
-  new_frac <- reindex_grid(frac = frac, frac_coordinates = frac$coordinates, fld_coordinates = fld_coord4, var = 'tas')
+  new_frac <- reindex_grid(frac = frac, frac_coordinates = frac$coord, fld_coordinates = fld_coord4, var = 'tas')
 
   # We only expect the number of columns to match the number of rows in the field coordinates data frame.
   expect_equal(ncol(new_frac), nrow(fld_coord4))
