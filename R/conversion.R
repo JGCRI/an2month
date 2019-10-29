@@ -12,13 +12,20 @@ tas_conversion <- function(input){
 }
 
 
-#' Convert from monthly downscaled preciptation from kg/m2*s to mm/month
+#' Convert monthly downscaled preciptation from kg/m2/s to mm/month
 #'
-#' @param input a 2d array of monhtly downscaled preciptation data in kg/m2*s to convert to mm/month, row.names of input must correspond to a time formatted as YYYYMM
+#' A kg/m2 of water is approximately one millimeter of depth (because at standard temperature
+#' 1 cc of water masses 1 gram).  So, to convert to depth per unit time, you just multiply
+#' by the number of seconds in the time unit you want.
+#'
+#' The difference between the regular and simplified version is that the simplified version
+#' doesn't attempt to correct for the fact that months are not all the same length; it just
+#' treats every month as 1/12 of a tropical year.
+#'
+#' @param input a 2d array of monhtly downscaled preciptation data in kg/m2/s to convert to mm/month, row.names of input must correspond to a time formatted as YYYYMM
 #' @importFrom lubridate %m+%
 #' @return a matrix of monthly precipitation data in mm/month
 #' @export
-
 pr_conversion <- function(input){
 
 
@@ -50,5 +57,13 @@ pr_conversion <- function(input){
 
 }
 
+#' @describeIn pr_conversion Simplified conversion of monthly downscaled preciptation from kg/m2/s to mm/month
+#'
+#' @export
+pr_conversion_simple <- function(input)
+{
+  tropyr_sec <- 365.24219 * 86400   # in seconds
+  month_sec <- tropyr_sec / 12.0
 
-
+  input * month_sec
+}

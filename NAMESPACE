@@ -3,6 +3,7 @@
 export(downscaling_component_api)
 export(monthly_downscaling)
 export(pr_conversion)
+export(pr_conversion_simple)
 export(tas_conversion)
 importFrom(dplyr,"%>%")
 importFrom(dplyr,left_join)
