@@ -177,7 +177,8 @@ downscaling_component_api <- function(alpha, fld_data, coords, time, var, ncore=
 {
     alpha <- get(alpha)   # would be better to use getFromNamespace, but it doesn't seem to work.
 
-    doParallel::registerDoParallel(cores=ncore)
+    #doParallel::registerDoParallel(cores=ncore)   # doParallel has been hanging on our system.
+    foreach::registerDoSEQ()
 
     if(is.null(colnames(coords)))
         colnames(coords) <- c('lat','lon') # Won't be necessary if you use the
