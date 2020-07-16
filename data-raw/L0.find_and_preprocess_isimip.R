@@ -16,65 +16,22 @@ library(tidyr)
 library(tibble)
 library(purrr)
 
-BASE         <- "/pic/projects/GCAM/Dorheim/grand_exp/an2month"     # The project location on pic
+BASE         <- "/pic/projects/GCAM/Dorheim/an2month"     # The project location on pic
 OUTPUT_DIR   <- file.path(BASE, "data-raw", "output-L0", "isimip")  # Define the output directory
 CDO_DIR      <- "/share/apps/netcdf/4.3.2/gcc/4.4.7/bin/cdo"        # Define the cdo directory
-ISIMIP_DIR   <- "/pic/projects/GCAM/leng569/data/Input_GCM_bced"    # The location of the isimip files on pic
+ISIMIP_DIR   <- "/pic/projects/GCAM/climate/isimip2b"               # The location of the isimip files on pic
 
 dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
 
-
-# 1. User Decisions -----------------------------------------------------------------------------------------------------
-# Select the ismip varaiables, experiment, model, and so on to process. The strings listed in each of the
-# vectors will be used in a serach pattern to identify the files to process from the ISIMIP_DIR. We are interested
-# in the biased correct files and they have the following file pattern. If the vector is set to NULL then the
-# pattern will serach for all options.
-# variable_bced_1960_1999_model_experiment_startYr-endYr.nc4
-if(showMessages) message('1. User Decisions')
-
-
-# isimip search vectors
-VARIABLES       <- c("tas", "pr")           # isimip variables to process
-EXPERIMENTS     <- "rcp4p5"                 # isimip experiments to process
-MODELS          <- NULL                     # isimip models to process, so everything
-
-
-# 2. Find the isimip files to process -----------------------------------------------------------------------------------------------------
+# 1. Find the isimip files to process -----------------------------------------------------------------------------------------------------
 # Create the serach netcdf search pattern and then serach the isimip directory.
 if(showMessages) message('2. Find the isimip files to process')
 
-# pattern_gen is a function that converts the isimip search vectors from section
-# into strings that will be used to create the regex search pattern. If the
-# input vector is set to NULL then the function will return a search all pattern.
-pattern_gen <- function(vector){
-
-  if(is.null(vector)){
-    "[a-zA-Z0-9-]+"
-  } else {
-    paste(vector, collapse = "|")
-  }
-
-}
-
-varpattern        <- pattern_gen(VARIABLES)
-modelpattern      <- pattern_gen(MODELS)
-experimentpattern <- pattern_gen(EXPERIMENTS)
-
-
-# Create the pattern for the isimip file names for the netcdfs to search for.
-isimip_search_pattern <- paste("(", varpattern,
-                               ")_(bced)_([0-9]{4})_([0-9]{4})_(", # the biased corrected portion of the pattern
-                               modelpattern, ")_(",
-                               experimentpattern, ")_",
-                               "([0-9]{4})-([0-9]{4}",          # time, set up to search for any 4 digit date
-                               ").nc4$", sep = "")
-# Sanity check
-if(showMessages) message("isimip file search pattern: ", isimip_search_pattern, "\n")
-
-
-# Search for the files
-file_list <- list.files(ISIMIP_DIR, pattern = isimip_search_pattern, full.names = TRUE, recursive = TRUE)
-
+# Search for the files, we want to process all of the daily pr and tas data.
+# For all the models and all of the experiments.
+tas_file_list <- list.files(ISIMIP_DIR, pattern = 'tas_day', full.names = TRUE, recursive = TRUE)
+pr_file_list <- list.files(ISIMIP_DIR, pattern = 'pr_day', full.names = TRUE, recursive = TRUE)
+file_list <- append(tas_file_list, pr_file_list)
 if(length(file_list) < 1) stop('Could not find any isimip files files matching ', isimip_search_pattern)
 
 
@@ -82,15 +39,14 @@ if(length(file_list) < 1) stop('Could not find any isimip files files matching '
 # help illustrate what we have and identify missing netcdf files.
 tibble(path = file_list) %>%
   mutate(filename = basename(path)) %>%
-  separate(filename, into = c("variable", "A", "B", "C", "model",
-                              "experiment", "date"), sep = "_", remove = FALSE) %>%
-  select(path, variable, model, experiment, date) %>%
+  separate(filename, into = c("variable", "resolution", "model", "experiment", "ensemble", "B", "C", "D"), sep = "_", remove = FALSE) %>%
+  mutate(date = gsub(pattern = '.nc', replacement = '', x = D)) %>%
+  select(path, variable, model, experiment, ensemble, date) %>%
   separate(date, into = c("startYr", "endYr"), sep = "-", remove = TRUE) %>%
   mutate(endYr = gsub(".nc4", "", endYr)) ->
   isimip_file_info
 
-
-# 3. Check coverage  ----------------------------------------------------------------------
+# 2. Check coverage  ----------------------------------------------------------------------
 # We need to make sure that we have pr and tas files for each model / experiment / time period.
 isimip_file_info %>%
   select(model, experiment, variable, startYr, endYr) %>%
@@ -116,7 +72,7 @@ if(nrow(missing_variable)){
 }
 
 
-# 4. Process to monthly  -------------------------------------------------------------------
+# 3. Process to monthly  -------------------------------------------------------------------
 # Becasue we only have access to the daily values we are going to need to average to the
 # monthly value intorder to the the monhtly fraction in data-raw step 1.
 if(showMessages) message('4. Process to monthly')
@@ -153,15 +109,15 @@ inter_dir <- file.path(OUTPUT_DIR, 'monthly'); dir.create(inter_dir)
 ncs <- lapply(isimip_file_info$path, FUN = monthly_func, cdo_dir = CDO_DIR, output_dir = inter_dir,
               showMessages = showMessages)
 
-# 5. Save nc information  -------------------------------------------------------------------
+# 4. Save nc information  -------------------------------------------------------------------
 # Create a tibble to save as a csv file that contains the paths and some additional information
 # about the nc files to pass on to level 1 to calculate the monthly fraction data.
 if(showMessages) message('4. Save nc information')
 
 tibble(file = unlist(ncs)) %>%
   mutate(filename = basename(file)) %>%
-  separate(filename, into = c("monthly", "variable", "A", "B", "C", "model",
-                              "experiment", "date"), sep = "_", remove = FALSE) %>%
+  separate(filename, into = c("variable", "resolution", "model", "experiment", "ensemble", "B", "C", "D", "F"), sep = "_", remove = FALSE) %>%
+  mutate(date = gsub(pattern = '.nc', replacement = '', x = D)) %>%
   select(path = file, variable, model, experiment, date) ->
   to_process
 
