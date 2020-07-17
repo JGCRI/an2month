@@ -19,7 +19,7 @@ library(purrr)
 BASE         <- "/pic/projects/GCAM/Dorheim/an2month"     # The project location on pic
 OUTPUT_DIR   <- file.path(BASE, "data-raw", "output-L0", "isimip")  # Define the output directory
 CDO_DIR      <- "/share/apps/netcdf/4.3.2/gcc/4.4.7/bin/cdo"        # Define the cdo directory
-ISIMIP_DIR   <- "/pic/projects/GCAM/climate/isimip2b"               # The location of the isimip files on pic
+ISIMIP_DIR   <- "/pic/projects/GCAM/ISIMIP-inputs-2b/"              # The location of the isimip files on pic
 
 dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
 
