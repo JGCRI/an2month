@@ -304,9 +304,8 @@ monthly_fraction <- function(input, cdo_dir, intermediate_dir, output_dir, showM
 # 3. Get Monthly Fractions  -------------------------------------------------------------------
 
 # Split up the to_process list by isimip information,
-input_list <- split(to_process,
-                    interaction(to_process$model, to_process$variable, to_process$experiment))
-input_list <- input_list[1]
+input_list <- split(to_process, interaction(to_process$model, to_process$variable, to_process$experiment))
+
 
 # lapply the monthly_fraction function to the list of the cmip files to
 # process.
