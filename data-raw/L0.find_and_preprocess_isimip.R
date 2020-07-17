@@ -29,8 +29,8 @@ if(showMessages) message('2. Find the isimip files to process')
 
 # Search for the files, we want to process all of the daily pr and tas data.
 # For all the models and all of the experiments.
-tas_file_list <- list.files(ISIMIP_DIR, pattern = 'tas_day', full.names = TRUE, recursive = TRUE)
-pr_file_list <- list.files(ISIMIP_DIR, pattern = 'pr_day', full.names = TRUE, recursive = TRUE)
+tas_file_list <- list.files(ISIMIP_DIR, pattern = 'tas_mon', full.names = TRUE, recursive = TRUE)
+pr_file_list <- list.files(ISIMIP_DIR, pattern = 'pr_mon', full.names = TRUE, recursive = TRUE)
 file_list <- append(tas_file_list, pr_file_list)
 if(length(file_list) < 1) stop('Could not find any isimip files files matching ', isimip_search_pattern)
 
