@@ -15,9 +15,9 @@ library(ncdf4)
 
 
 # Directories
-BASE        <- "/pic/projects/GCAM/Dorheim/grand_exp/an2month"                    # The project directory
+BASE        <- "/pic/projects/GCAM/Dorheim/an2month"                               # The project directory
 TEMP_OUTPUT <- "/pic/scratch/dorh012"                                             # Define a place to store the interminate netcdfs created during the cdo processing.
-OUTPUT      <- "/pic/projects/GCAM/Dorheim/grand_exp/an2month/data-raw/output-L1" # Define a place to store the final output netcdfs created
+OUTPUT      <- file.path(BASE, 'data-raw', 'output-L1'); dir.create(OUTPUT)       # Define a place to store the final output netcdfs created
 CDO_DIR     <- "/share/apps/netcdf/4.3.2/gcc/4.4.7/bin/cdo"                       # Define the cdo directory.
 
 
@@ -306,16 +306,17 @@ monthly_fraction <- function(input, cdo_dir, intermediate_dir, output_dir, showM
 # Split up the to_process list by isimip information,
 input_list <- split(to_process,
                     interaction(to_process$model, to_process$variable, to_process$experiment))
+input_list <- input_list[1]
 
 # lapply the monthly_fraction function to the list of the cmip files to
 # process.
-lapply(X = input_list, FUN = monthly_fraction,
+lapply(X = input_list,
+       FUN = monthly_fraction,
        cdo_dir = CDO_DIR,
        intermediate_dir = TEMP_OUTPUT,
        output_dir = OUTPUT,
        showMessages = TRUE,
-       saveIntermediates =
-         ,
+       saveIntermediates = TRUE,
        testOutputs = FALSE) ->
   average_monthly_fractions
 
