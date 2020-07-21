@@ -1,11 +1,11 @@
 
-# Purpose: Format the monthly fraction netcdfs from L1A into an array[nyear, nmonth, ngrid].This is 
-# set up to run on pic. Users will want to change the dirs defined in the section 0. 
+# Purpose: Format the monthly fraction netcdfs from L1A into an array[nyear, nmonth, ngrid].This is
+# set up to run on pic. Users will want to change the dirs defined in the section 0.
 
 # 0. Set Up -----------------------------------------------------------------------------------
 
 # Set up the directories
-BASE   <- '/pic/projects/GCAM/Dorheim/grand_exp/an2month' # should be the project location
+BASE   <- here::here() # should be the project location
 INPUT  <- file.path(BASE, 'data-raw', 'output-L1')
 OUTPUT <- file.path(BASE, 'data-raw', 'output-L2'); dir.create(OUTPUT)
 
@@ -20,9 +20,10 @@ library(ncdf4)
 
 # Find the netcdfs files on the INPUT
 netcdfs <- list.files(INPUT, pattern = '.nc', full.names = TRUE)
+netcdfs <- netcdfs[!grepl(x = netcdfs, pattern = 'piControl')]
 
 # Import the missing cells mapping file
-NA_mapping <- read.table(file.path(BASE, 'mapping', 'missing_cells_mapping.tsv'))
+NA_mapping <- read.table(file.path(BASE, 'data-raw', 'mapping', 'missing_cells_mapping.tsv'))
 
 # 2. Define functions ------------------------------------------------------------
 
@@ -37,6 +38,12 @@ format_data <- function(input_path, var, output_dir){
   nc   <- nc_open(input_path)
 
   # Extract data from  the nc
+  if(var == 'tas'){
+    var <- 'tasAdjust'
+  } else {
+    var <- 'prAdjust'
+  }
+
   data <- ncvar_get(nc, var)
   time <- ncvar_get(nc, 'time')
   lon  <- ncvar_get(nc, 'lon')
@@ -60,7 +67,7 @@ format_data <- function(input_path, var, output_dir){
 
   # Only for the pr in the Sharah desert replace the monthly fractions with 1/12 to avoid
   # problems latter on. This problem does not occur with temp.
-  if(var == 'pr'){
+  if(var == 'prAdjust'){
 
     # Format the grid cell coordinat data frame.
     tibble(lat = lat) %>%
