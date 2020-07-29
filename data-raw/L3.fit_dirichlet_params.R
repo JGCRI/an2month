@@ -10,12 +10,14 @@ library(ncdf4)
 library(readr)
 
 ### Models available
-modelnames <-
-    c('gfdl-esm2m_rcp4p5',
-      'ipsl-cm5a-lr_rcp4p5',
-      'miroc-esm-chem_rcp4p5',
-      'noresm1-m_rcp4p5',
-      'test')
+model <- c('GFDL-ESM2M', 'HadGEM2-ES', 'IPSL-CM5A-LR', 'MIROC5')
+rcps <-c('historical', 'rcp26', 'rcp45', 'rcp60', 'rcp8')
+
+models <- tolower(rep(model, each =length(rcps)))
+rcps <- rep(rcps, length(model))
+modelnames <- paste(models, rcps, sep = '_')
+modelnames <- c(modelnames, test)
+modelnames <- modelnames[1:2]
 
 ### Function to read the monthly data from a file
 ### :param filename: Name of a netcdf file
