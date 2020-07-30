@@ -20,7 +20,6 @@ models <- rep(model, each =length(rcps))
 rcps <- rep(rcps, length(model))
 modelnames <- paste(models, rcps, sep = '_')
 modelnames <- c(modelnames, 'test')
-modelnames <- modelnames[1:2]
 
 ### Function to read the monthly data from a file
 ### :param filename: Name of a netcdf file
