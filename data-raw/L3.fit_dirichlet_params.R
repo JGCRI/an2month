@@ -1,22 +1,25 @@
 #### Given the monthly fractions for the input variables by year and grid cell,
 #### fit the alpha parameters for a Dirichlet distribution.
-
+message('-----------------------------------------------------------------------------------')
 library(doParallel)
+#install.packages('rstan')
 library(rstan)
 library(assertthat)
-library(usethis)
+#install.packages('usethis')
+#library(usethis)
 library(tibble)
 library(ncdf4)
 library(readr)
+message('----------------------------------------------------------------------------------')
 
 ### Models available
 model <- c('GFDL-ESM2M', 'HadGEM2-ES', 'IPSL-CM5A-LR', 'MIROC5')
-rcps <-c('historical', 'rcp26', 'rcp45', 'rcp60', 'rcp8')
+rcps <-c('historical', 'rcp26', 'rcp45', 'rcp60', 'rcp85')
 
-models <- tolower(rep(model, each =length(rcps)))
+models <- rep(model, each =length(rcps))
 rcps <- rep(rcps, length(model))
 modelnames <- paste(models, rcps, sep = '_')
-modelnames <- c(modelnames, test)
+modelnames <- c(modelnames, 'test')
 modelnames <- modelnames[1:2]
 
 ### Function to read the monthly data from a file
@@ -155,8 +158,8 @@ nccoord <- function(infile)
 procmodel <- function(modelidx, test=0, outdir='.', write_data=TRUE, nodefile=NULL, nproc=4)
 ### :param modelidx: Index into the modelnames array above
 {
+message('starting procmodel')
     model <- modelnames[modelidx]
-
     if(!is.null(nodefile)) {
         clust_setup(nodefile, nproc)
     }
@@ -169,19 +172,19 @@ procmodel <- function(modelidx, test=0, outdir='.', write_data=TRUE, nodefile=NU
     dir.create(ckptdir)
 
     ## Precipitation fractions
-    pr_frac_file <- file.path('output-L1', paste0('pr_', model,
+    pr_frac_file <- file.path('./output-L1', paste0('pr_', model,
                                                   '_monthlyFrac.nc'))
-    fracdata_pr <- readnc(pr_frac_file, 'pr')
+    fracdata_pr <- readnc(pr_frac_file, 'prAdjust')
     alpha_pr <- dirfit(fracdata_pr, ckptdir, test=test, chkzero=TRUE)
 
     ## Temperature fractions
-    tas_frac_file <- file.path('output-L1', paste0('tas_', model,
+    tas_frac_file <- file.path('./output-L1', paste0('tas_', model,
                                                    '_monthlyFrac.nc'))
-    fracdata_tas <- readnc(tas_frac_file, 'tas')
+    fracdata_tas <- readnc(tas_frac_file, 'tasAdjust')
     alpha_tas <- dirfit(fracdata_tas, ckptdir, test=test)
 
     ## Create coordinate structure
-    ncfile <- file.path('output-L1', paste0('pr_', model, '_monthlyFrac.nc'))
+    ncfile <- file.path('./output-L1', paste0('pr_', model, '_monthlyFrac.nc'))
     coord <- nccoord(ncfile)
 
     ## The 'time' element of the final output
@@ -232,3 +235,4 @@ clust_setup <- function(nodefile, nproc)
     registerDoParallel(cl)
 
 }
+message('sourced function script')
