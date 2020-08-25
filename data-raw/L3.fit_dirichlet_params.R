@@ -192,8 +192,7 @@ message('starting procmodel')
     mnum <- sprintf('%02d', seq_along(mnames))
     time <- tibble(month=mnum, month_name=mnames)
 
-    outfile <- gsub('_rcp4p5', '', model)
-    outfile <- gsub('-','_', outfile)
+    outfile <- model
     outfile <- file.path('output-L3', paste0('alpha_', outfile, '.rds'))
 
     outdata <- list(tas=alpha_tas, pr=alpha_pr, coord=coord, time=time)
