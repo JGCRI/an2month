@@ -13,26 +13,13 @@
 # the slurm array must also start at 1 otherwise it will run nothing.
 
 source /etc/profile.d/modules.sh >& /dev/null
+#module load gcc/6.3.0
+module load gcc/5.2.0
+limit stacksize unlimited
 module load R/3.4.3
 
 date
 
-tmpdir=`mktemp -d`
-nodefile=$tmpdir/nodes.txt
-
-scontrol show hostnames > $nodefile
-
-tid=$SLURM_ARRAY_TASK_ID
-
-program="./L3.fit_dirichlet_params.R"
-outdir="./output-L3"
-
-cmd="source('$program'); procmodel($tid, outdir='$outdir', nodefile='$nodefile', nproc=$SLURM_NTASKS)"
-echo "Run command:"
-echo $cmd
-
-Rscript -e $cmd
-
-rm -rf $tmpdir
+Rscript /pic/projects/GCAM/Dorheim/an2month/data-raw/L3B.run_rstan_alpha_code.R
 
 date
