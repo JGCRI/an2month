@@ -29,8 +29,8 @@ if(showMessages) message('2. Find the isimip files to process')
 
 # Search for the files, we want to process all of the daily pr and tas data.
 # For all the models and all of the experiments.
-tas_file_list <- list.files(ISIMIP_DIR, pattern = 'tas_mon', full.names = TRUE, recursive = TRUE)
-pr_file_list <- list.files(ISIMIP_DIR, pattern = 'pr_mon', full.names = TRUE, recursive = TRUE)
+tas_file_list <- list.files(ISIMIP_DIR, pattern = 'tas', full.names = TRUE, recursive = TRUE)
+pr_file_list <- list.files(ISIMIP_DIR, pattern = 'pr', full.names = TRUE, recursive = TRUE)
 file_list <- append(tas_file_list, pr_file_list)
 if(length(file_list) < 1) stop('Could not find any isimip files files matching ', isimip_search_pattern)
 
@@ -116,8 +116,11 @@ if(showMessages) message('4. Save nc information')
 
 ncs <- list.files(file.path(OUTPUT_DIR, 'monthly'), full.names = TRUE)
 
+# Remove the observation files
+ncs <- ncs[!grepl(pattern = 'ewembi1_daily|ewembi1_daily', x = ncs)]
+ncs <- ncs[!grepl(pattern = 'monthly_pr_ewembi1_daily', x = ncs)]
 
-tibble(file = list.files(file.path(OUTPUT_DIR, 'monthly'), full.names = TRUE)) %>%
+tibble(file = ncs, full.names = TRUE) %>%
   mutate(filename = basename(file)) %>%
   separate(filename, into = c("resolution", "variable", "t", "model", "experiment", "ensemble", "B", "C", "D"), sep = "_", remove = FALSE) %>%
   mutate(date = gsub(pattern = '.nc', replacement = '', x = D)) %>%

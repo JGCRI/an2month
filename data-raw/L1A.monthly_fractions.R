@@ -213,7 +213,7 @@ monthly_fraction <- function(input, cdo_dir, intermediate_dir, output_dir, showM
 
   concatenated_nc     <- paste0(inter_name, '_concatenated.nc')
   annualAvg_nc        <- paste0(inter_name, '_annualAvg.nc')
-  concatenatedFrac_nc <- paste0(inter_name, '_monthlyFrac.nc')
+  concatenatedFrac_nc <- paste0(output_dir, '_monthlyFrac.nc')
   #avgFrac_nc          <- paste0(output_name, '_avgFrac.nc')
 
   # If the concatenated files exist they will cause problems
