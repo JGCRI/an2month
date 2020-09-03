@@ -10,7 +10,7 @@ source('/pic/projects/GCAM/Dorheim/an2month/data-raw/L3.fit_dirichlet_params.R')
 ### combinations. FYI if one of the scenarios is missing the procmodel
 ### function will throw an error.
 model <- c('GFDL-ESM2M', 'HadGEM2-ES', 'IPSL-CM5A-LR', 'MIROC5')
-rcps <- c('historical', 'rcp26', 'rcp45', 'rcp60', 'rcp8')
+rcps <- c('rcp26', 'rcp45', 'rcp60', 'rcp8')
 
 
 models <- rep(model, each =length(rcps))
