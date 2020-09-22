@@ -48,7 +48,12 @@ readnc <- function(filename, varname=NULL) {
 
 ### Model fitting function.  The intention is to launch a separate job for each
 ### file.
-dirfit <- function(monfrac, outdir, stanfile='dirichlet-fit.stan', test=0)
+### The user must specify the indices for the years they want to keep; for
+### ISIMIP2b data, the years of interest in each netcdf are 2006-2099,
+### indices 1:94 (because the ISIMIP2b files start from 2006)
+dirfit <- function(monfrac, outdir, stanfile='dirichlet-fit.stan',
+                   year_start_index = 1, year_end_index = 94,
+                   test=0)
 ### :param infile: matrix[nyear, nmonth, ngrid] of monthly fractions of ESM
 ###                output (either temperature or precip).
 ### :param outdir: directory to write checkpoint files into
@@ -57,9 +62,7 @@ dirfit <- function(monfrac, outdir, stanfile='dirichlet-fit.stan', test=0)
 ### :param test: Flag. If true, the check on the number of grid cells is disabled.
 {
     # Only keep 2006-2099
-    ## TODO if ever want to fit distribution to historical
-    ## fractions, would have to update.
-    monfrac <- monfrac[1:94, ,]
+    monfrac <- monfrac[year_start_index:year_end_index, ,]
 
 
     ## Find the valid cells.
