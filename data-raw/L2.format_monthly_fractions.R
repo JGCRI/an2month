@@ -130,7 +130,6 @@ tibble(path = netcdfs,
                   into = c('var', 'model', 'exp', 'frac'),
                   remove = FALSE,
                   sep = '_') %>%
-  filter(model != 'HadGEM2-ES') %>%
   split(.$path) %>%
   lapply(function(input){format_data(input_path = input$path, var = input$var, output_dir = OUTPUT)})
 

@@ -201,6 +201,7 @@ monthly_fraction <- function(input, cdo_dir, intermediate_dir, output_dir, showM
   if(any(missing)) stop('input is missing ', paste(req_cols[missing], sep = ', ') )
 
   file_info <- distinct(select(input, -path))
+  message(file_info)
   if(nrow(file_info) != 1) stop('input can only contain a single variable/domain/model/experiment/ensemble combination\n', file_info)
 
   # Required directories
@@ -213,7 +214,7 @@ monthly_fraction <- function(input, cdo_dir, intermediate_dir, output_dir, showM
 
   concatenated_nc     <- paste0(inter_name, '_concatenated.nc')
   annualAvg_nc        <- paste0(inter_name, '_annualAvg.nc')
-  concatenatedFrac_nc <- paste0(inter_name, '_monthlyFrac.nc')
+  concatenatedFrac_nc <- paste0(output_name, '_monthlyFrac.nc')
   #avgFrac_nc          <- paste0(output_name, '_avgFrac.nc')
 
   # If the concatenated files exist they will cause problems
@@ -288,7 +289,7 @@ monthly_fraction <- function(input, cdo_dir, intermediate_dir, output_dir, showM
   if(!saveIntermediates){
 
     # If the saveIntermediates is set to FALSE then remove the intermediate netcdf files
-    file.remove(concatenated_nc,
+    file.remove(
                 annualAvg_nc,
                 years_ncs$frac_file,
                 years_ncs$mon_file,
@@ -320,5 +321,6 @@ lapply(X = input_list,
   average_monthly_fractions
 
 # End
+
 
 

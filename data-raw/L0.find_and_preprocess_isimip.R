@@ -19,7 +19,7 @@ library(purrr)
 BASE         <- "/pic/projects/GCAM/Dorheim/an2month"     # The project location on pic
 OUTPUT_DIR   <- file.path(BASE, "data-raw", "output-L0", "isimip")  # Define the output directory
 CDO_DIR      <- "/share/apps/netcdf/4.3.2/gcc/4.4.7/bin/cdo"        # Define the cdo directory
-ISIMIP_DIR   <- "/pic/projects/GCAM/ISIMIP-inputs-2b/"              # The location of the isimip files on pic
+ISIMIP_DIR   <- "/pic/projects/GCAM/ISIMIP-inputs-2b/raw"              # The location of the isimip files on pic
 
 dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
 
@@ -29,9 +29,10 @@ if(showMessages) message('2. Find the isimip files to process')
 
 # Search for the files, we want to process all of the daily pr and tas data.
 # For all the models and all of the experiments.
-tas_file_list <- list.files(ISIMIP_DIR, pattern = 'tas_mon', full.names = TRUE, recursive = TRUE)
-pr_file_list <- list.files(ISIMIP_DIR, pattern = 'pr_mon', full.names = TRUE, recursive = TRUE)
+tas_file_list <- list.files(ISIMIP_DIR, pattern = 'tas_', full.names = TRUE, recursive = TRUE)
+pr_file_list <- list.files(ISIMIP_DIR, pattern = 'pr_', full.names = TRUE, recursive = TRUE)
 file_list <- append(tas_file_list, pr_file_list)
+file_list <- file_list[!grepl(x = tolower(file_list), pattern = 'picontrol')]
 if(length(file_list) < 1) stop('Could not find any isimip files files matching ', isimip_search_pattern)
 
 
